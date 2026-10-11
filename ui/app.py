@@ -302,8 +302,32 @@ if page == "Chat":
     # Remove mensagens em branco
     st.session_state.messages = [m for m in st.session_state.messages if m["content"].strip()]
 
-    # Se não há mensagens no histórico, renderiza o Hero / Boas-vindas
+    # Se não há mensagens no histórico, a tela inicial fica totalmente fixa (sem rolagem) até iniciar a conversa
     if not st.session_state.messages:
+        st.markdown(
+            """<style>
+            html, body, .stApp, [data-testid="stMain"], section.main {
+                overflow: hidden !important;
+                height: 100vh !important;
+                max-height: 100vh !important;
+            }
+            .block-container {
+                padding-top: 1rem !important;
+                padding-bottom: 0 !important;
+                min-height: calc(100vh - 120px) !important;
+                height: calc(100vh - 120px) !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+            .nx-welcome-wrap {
+                min-height: 0 !important;
+                height: auto !important;
+                margin: auto 0 !important;
+            }
+            </style>""",
+            unsafe_allow_html=True,
+        )
         render_hero()
     else:
         st.markdown('<div class="nx-spacer"></div>', unsafe_allow_html=True)
