@@ -851,47 +851,42 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
 [data-testid="stBottom"] {
     position: sticky !important;
     bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     z-index: 40 !important;
     background: linear-gradient(180deg, rgba(8, 11, 20, 0) 0%, rgba(8, 11, 20, 0.75) 25%, #080B14 55%, #080B14 100%) !important;
     padding-top: 36px !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
     box-sizing: border-box !important;
 }
 [data-testid="stBottom"] > div {
     width: 100% !important;
     max-width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
     background: transparent !important;
     box-sizing: border-box !important;
 }
 [data-testid="stBottomBlockContainer"] {
     width: 100% !important;
     max-width: var(--nx-chat-w) !important;
-    margin-inline: auto !important;
-    padding: 0 1.5rem 1.35rem 1.5rem !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 0 1.5rem 1.4rem 1.5rem !important;
     box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
+}
+[data-testid="stBottomBlockContainer"] [data-testid="stVerticalBlock"],
+[data-testid="stBottomBlockContainer"] .element-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 [data-testid="stChatInput"] {
     position: relative !important;
     display: flex !important;
     align-items: center !important;
     width: 100% !important;
+    min-width: 100% !important;
     max-width: 100% !important;
-    padding: 8px 10px 8px 18px !important;
-    border-radius: 18px !important;
+    padding: 10px 14px 10px 22px !important;
+    border-radius: 22px !important;
     background: #0E1424 !important;
     border: 1px solid var(--nx-border-2) !important;
     box-shadow: 0 8px 32px rgba(0,0,0,.60) !important;
