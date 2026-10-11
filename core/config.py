@@ -4,7 +4,9 @@ from typing import List, Dict
 
 class Settings(BaseModel):
     # Model Configurations
-    DEFAULT_MODEL: str = "llama3.2:latest" # Replace with 'mistral', 'qwen', 'deepseek-coder' etc.
+    DEFAULT_MODEL: str = "llama3.2:latest"
+    DEFAULT_DEEPSEEK_MODEL: str = "deepseek-r1:1.5b"
+    DEFAULT_DOLPHIN_MODEL: str = "dolphin-phi:2.7b"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     
     # Provider

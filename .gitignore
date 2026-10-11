@@ -21,3 +21,8 @@ scratch/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local runtime data
+data/documents/*
+!data/documents/.keep
+data/vector_db/

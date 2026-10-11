@@ -1183,11 +1183,180 @@ div.stButton > button:hover {
     color: #f87171 !important;
 }
 
+/* ============================ Hub de Modelos & Hardware ============================ */
+.nx-hw-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 14px 0 24px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+.nx-hw-card {
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    border-radius: var(--nx-r-md);
+    padding: 12px 14px;
+    box-sizing: border-box;
+    transition: var(--nx-t);
+}
+.nx-hw-card:hover { border-color: var(--nx-border-hi); }
+.nx-hw-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--nx-text-2);
+    font-size: var(--nx-fs-xs);
+    margin-bottom: 6px;
+}
+.nx-hw-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--nx-text);
+}
+.nx-hw-sub {
+    font-size: var(--nx-fs-xs);
+    color: var(--nx-text-3);
+    margin-top: 2px;
+}
+.nx-model-showcase {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.nx-showcase-card {
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    border-radius: var(--nx-r-lg);
+    padding: 18px 20px;
+    box-sizing: border-box;
+    transition: var(--nx-t);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.nx-showcase-card:hover { border-color: var(--nx-border-hi); }
+.nx-showcase-card.active {
+    border-color: var(--nx-purple);
+    box-shadow: 0 0 20px rgba(117, 72, 255, 0.15);
+}
+.nx-showcase-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+.nx-showcase-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.nx-showcase-ico {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--nx-surface-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nx-purple-hi);
+    flex-shrink: 0;
+}
+.nx-showcase-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--nx-text);
+}
+.nx-showcase-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: var(--nx-fs-xs);
+    font-weight: 600;
+    background: rgba(117, 72, 255, 0.15);
+    color: var(--nx-purple-hi);
+    border: 1px solid rgba(117, 72, 255, 0.3);
+}
+.nx-showcase-desc {
+    font-size: var(--nx-fs-sm);
+    color: var(--nx-text-2);
+    line-height: 1.5;
+}
+.nx-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.nx-tag-pill {
+    font-size: var(--nx-fs-xs);
+    color: var(--nx-text-3);
+    background: var(--nx-surface-2);
+    border: 1px solid var(--nx-border);
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+.nx-sidebar-model-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--nx-surface-2);
+    border: 1px solid var(--nx-border-2);
+    border-radius: var(--nx-r-md);
+    margin-bottom: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.nx-sidebar-model-name {
+    font-size: var(--nx-fs-sm);
+    font-weight: 600;
+    color: var(--nx-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nx-sidebar-model-family {
+    font-size: var(--nx-fs-xs);
+    color: var(--nx-purple-hi);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+.nx-think-block {
+    border-left: 3px solid var(--nx-purple);
+    padding: 8px 14px;
+    background: rgba(117, 72, 255, 0.06);
+    border-radius: 0 var(--nx-r-sm) var(--nx-r-sm) 0;
+    font-size: 0.88rem;
+    color: var(--nx-text-2);
+    margin: 10px 0;
+    line-height: 1.6;
+}
+.nx-think-title {
+    font-size: var(--nx-fs-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--nx-purple-hi);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 /* ============================ Responsivo ============================ */
 @media (max-width: 1024px) {
     .nx-cards { grid-template-columns: repeat(2, 1fr); }
+    .nx-hw-grid { grid-template-columns: repeat(2, 1fr); }
+    .nx-model-showcase { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
+    .nx-cards { grid-template-columns: 1fr; }
+    .nx-hw-grid { grid-template-columns: 1fr; }
+    .nx-model-showcase { grid-template-columns: 1fr; }
     .nx-cards { grid-template-columns: 1fr; }
     .nx-top { top: 8px; right: 12px; gap: 6px; }
     .nx-hero h1 { font-size: 1.7rem; }
