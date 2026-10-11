@@ -77,23 +77,74 @@ PAGES = ["Chat", "Configurações", "Arquivos", "Modelos", "Sobre"]
 _host = (urlparse(settings.OLLAMA_BASE_URL).hostname or "").lower()
 IS_LOCAL = _host in ("localhost", "127.0.0.1", "::1")
 
+
+def _execute_download(model_tag: str, container=None):
+    """Executa o download de um modelo via streaming com barra de progresso visual."""
+    ctx = container or st
+    progress_bar = ctx.progress(0)
+    status_box = ctx.empty()
+    status_box.info(f"Iniciando download do modelo '{model_tag}' via Ollama...")
+
+    try:
+        for event in model_manager.pull_model_stream(model_tag):
+            st_text = event.get("status", "")
+            percent = float(event.get("percent", 0.0))
+            completed_mb = event.get("completed_mb", 0.0)
+            total_mb = event.get("total_mb", 0.0)
+
+            if event.get("status") == "error":
+                status_box.error(event.get("message", "Erro no download."))
+                return
+            elif event.get("status") == "success":
+                progress_bar.progress(100)
+                status_box.success(event.get("message", "Download concluído!"))
+                st.session_state.active_model = model_tag
+                settings.DEFAULT_MODEL = model_tag
+                st.rerun()
+                return
+            else:
+                pct_norm = max(0.0, min(percent / 100.0, 1.0))
+                progress_bar.progress(pct_norm)
+                detail = f" — {completed_mb:.1f} MB / {total_mb:.1f} MB" if total_mb > 0 else ""
+                status_box.text(f"{st_text}{detail} ({percent:.1f}%)")
+    except Exception as e:
+        status_box.error(f"Falha durante o download: {str(e)}")
+
+
 # Inicialização do estado de sessão
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "active_model" not in st.session_state:
-    st.session_state.active_model = settings.DEFAULT_MODEL
 
-# Verificação do status do Ollama
+# Verificação do status do Ollama e modelos instalados
 ollama_online = model_manager.is_available()
 installed_models_data = model_manager.list_installed_models() if ollama_online else []
 installed_tags = [m["name"] for m in installed_models_data]
 
+# Monta lista completa de modelos disponíveis para seleção direta
+# Inclui os modelos recomendados da família DeepSeek e Dolphin + modelos já instalados
+selectable_models = []
+featured_models = [
+    "deepseek-r1:1.5b",
+    "dolphin-phi:2.7b",
+    "deepseek-coder:1.3b",
+]
+
+for fm in featured_models:
+    if fm not in selectable_models:
+        selectable_models.append(fm)
+
+for im in installed_tags:
+    if im not in selectable_models:
+        selectable_models.append(im)
+
 # Sincronização do modelo ativo
-if installed_tags:
-    if st.session_state.active_model not in installed_tags:
+if "active_model" not in st.session_state or not st.session_state.active_model:
+    if installed_tags:
         st.session_state.active_model = installed_tags[0]
-else:
-    st.session_state.active_model = None
+    elif selectable_models:
+        st.session_state.active_model = selectable_models[0]
+    else:
+        st.session_state.active_model = None
 
 # Barra lateral
 with st.sidebar:
@@ -110,30 +161,68 @@ with st.sidebar:
         if not ollama_online:
             st.warning("Serviço Ollama não detectado em localhost:11434. Inicie o Ollama no terminal com 'ollama serve'.")
             selected_model = None
-        elif not installed_tags:
-            st.info("Nenhum modelo instalado. Acesse a aba 'Modelos' para instalar o DeepSeek ou Dolphin.")
-            selected_model = None
         else:
-            cur_idx = installed_tags.index(st.session_state.active_model) if st.session_state.active_model in installed_tags else 0
+            def format_sidebar_model(tag: str) -> str:
+                is_inst = model_manager.is_model_installed(tag)
+                fam = model_manager.detect_family(tag)
+                fam_info = model_manager.get_family_info(fam)
+                fam_name = fam_info.get("name", fam.capitalize())
+
+                size_str = ""
+                for v in fam_info.get("variants", []):
+                    if v["tag"] == tag:
+                        size_str = f" ({v['size_gb']} GB)"
+                        break
+
+                status_label = "Instalado" if is_inst else "Baixar"
+                return f"{tag} · {fam_name}{size_str} — {status_label}"
+
+            cur_idx = selectable_models.index(st.session_state.active_model) if st.session_state.active_model in selectable_models else 0
             selected_model = st.selectbox(
-                "Modelo Local Ativo",
-                installed_tags,
+                "Modelo Local",
+                selectable_models,
                 index=cur_idx,
+                format_func=format_sidebar_model,
                 key="sidebar_model_select"
             )
             st.session_state.active_model = selected_model
             settings.DEFAULT_MODEL = selected_model
 
-            # Badge informativa da família do modelo
+            # Atalhos rápidos para alternar diretamente entre DeepSeek e Dolphin
+            col_qds, col_qdol = st.columns(2)
+            with col_qds:
+                if st.button("DeepSeek", key="sb_quick_ds", use_container_width=True, help="Selecionar DeepSeek (Raciocínio & Código)"):
+                    st.session_state.active_model = "deepseek-r1:1.5b"
+                    settings.DEFAULT_MODEL = "deepseek-r1:1.5b"
+                    st.rerun()
+            with col_qdol:
+                if st.button("Dolphin", key="sb_quick_dol", use_container_width=True, help="Selecionar Dolphin (Conversação & Escrita)"):
+                    st.session_state.active_model = "dolphin-phi:2.7b"
+                    settings.DEFAULT_MODEL = "dolphin-phi:2.7b"
+                    st.rerun()
+
+            # Badge informativa da família e estado
             fam = model_manager.detect_family(selected_model)
             fam_info = model_manager.get_family_info(fam)
+            is_installed = model_manager.is_model_installed(selected_model)
+
+            status_badge_text = fam_info.get("badge", "Modelo")
+            if not is_installed:
+                status_badge_text += " · Não instalado"
+
             st.markdown(
                 f'<div class="nx-sidebar-model-badge">'
-                f'<span class="nx-badge-tag">{fam_info.get("badge", "Modelo")}</span>'
+                f'<span class="nx-badge-tag">{status_badge_text}</span>'
                 f'<span class="nx-badge-name">{fam_info.get("name", selected_model)}</span>'
                 f'</div>',
                 unsafe_allow_html=True
             )
+
+            # Botão de download rápido se a variante selecionada ainda não estiver instalada
+            if not is_installed:
+                st.info(f"O modelo '{selected_model}' ainda não foi baixado no Ollama local.")
+                if st.button(f"Baixar e Ativar", key="sb_btn_download_model", use_container_width=True):
+                    _execute_download(selected_model)
 
         # Persona Selection
         selected_persona = st.selectbox("Personalidade", list(settings.PERSONAS.keys()))
@@ -150,7 +239,7 @@ with st.sidebar:
                 st.rerun()
         with col_rel:
             if st.button("Liberar RAM", use_container_width=True, help="Descarrega o modelo da memória RAM"):
-                if st.session_state.active_model:
+                if st.session_state.active_model and model_manager.is_model_installed(st.session_state.active_model):
                     model_manager.unload_model(st.session_state.active_model)
                     st.toast(f"Modelo '{st.session_state.active_model}' descarregado da RAM.")
 
@@ -175,9 +264,11 @@ with st.sidebar:
             else:
                 st.info("Arquivo já indexado.")
 
-# Barra superior
+# Barra superior com modelo ativo e status local
+active_pill_text = st.session_state.active_model or "Sem modelo"
 st.markdown(
     '<div class="nx-top">'
+    f'<span class="nx-pill"><span class="dot"></span>{active_pill_text}</span>'
     f'<span class="nx-pill{"" if (IS_LOCAL and ollama_online) else " off"}"><span class="dot"></span>'
     f'{"100% local · privado" if (IS_LOCAL and ollama_online) else ("Ollama desconectado" if not ollama_online else "Servidor externo")}</span>'
     '</div>',
@@ -199,10 +290,8 @@ def format_chat_text(content: str) -> str:
         thought = match.group(1).strip()
         return f'<div class="nx-think-block"><div class="nx-think-title">Raciocínio Analítico</div>{thought}</div>'
 
-    # Bloco <think> completo
     formatted = re.sub(r"<think>(.*?)</think>", _replace_think, content, flags=re.DOTALL)
 
-    # Bloco <think> aberto durante streaming
     if "<think>" in formatted and "</think>" not in formatted:
         parts = formatted.split("<think>", 1)
         formatted = f'{parts[0]}<div class="nx-think-block"><div class="nx-think-title">Raciocínio em andamento...</div>{parts[1]}</div>'
@@ -416,7 +505,6 @@ def render_models():
         else:
             st.info(ds_compat["message"])
 
-        # Estado da variante (instalado ou para download)
         ds_is_installed = model_manager.is_model_installed(chosen_ds["tag"])
         ds_is_active = (st.session_state.active_model == chosen_ds["tag"]) or (
             st.session_state.active_model and st.session_state.active_model.startswith(chosen_ds["tag"])
@@ -467,7 +555,6 @@ def render_models():
         )
         chosen_dol = dol_variants[dol_choice_idx]
 
-        # Avaliação de compatibilidade
         dol_compat = model_manager.evaluate_compatibility(chosen_dol["size_gb"], chosen_dol["min_ram_gb"])
         if dol_compat["status"] == "error":
             st.error(dol_compat["message"])
@@ -476,7 +563,6 @@ def render_models():
         else:
             st.info(dol_compat["message"])
 
-        # Estado da variante
         dol_is_installed = model_manager.is_model_installed(chosen_dol["tag"])
         dol_is_active = (st.session_state.active_model == chosen_dol["tag"]) or (
             st.session_state.active_model and st.session_state.active_model.startswith(chosen_dol["tag"])
@@ -608,38 +694,6 @@ def render_models():
                 st.rerun()
 
 
-def _execute_download(model_tag: str):
-    """Executa o download de um modelo via streaming com barra de progresso visual."""
-    progress_bar = st.progress(0)
-    status_box = st.empty()
-    status_box.info(f"Iniciando download do modelo '{model_tag}' via Ollama...")
-
-    try:
-        for event in model_manager.pull_model_stream(model_tag):
-            st_text = event.get("status", "")
-            percent = float(event.get("percent", 0.0))
-            completed_mb = event.get("completed_mb", 0.0)
-            total_mb = event.get("total_mb", 0.0)
-
-            if event.get("status") == "error":
-                status_box.error(event.get("message", "Erro no download."))
-                return
-            elif event.get("status") == "success":
-                progress_bar.progress(100)
-                status_box.success(event.get("message", "Download concluído!"))
-                st.session_state.active_model = model_tag
-                settings.DEFAULT_MODEL = model_tag
-                st.rerun()
-                return
-            else:
-                pct_norm = max(0.0, min(percent / 100.0, 1.0))
-                progress_bar.progress(pct_norm)
-                detail = f" — {completed_mb:.1f} MB / {total_mb:.1f} MB" if total_mb > 0 else ""
-                status_box.text(f"{st_text}{detail} ({percent:.1f}%)")
-    except Exception as e:
-        status_box.error(f"Falha durante o download: {str(e)}")
-
-
 def render_about():
     st.markdown(
         '<div class="nx-page"><h2>Sobre</h2><div class="sub">Nexus IA é um assistente autônomo corporativo que opera localmente via Ollama, '
@@ -718,7 +772,12 @@ if page == "Chat":
                 if not ollama_online:
                     st.error("O Ollama não está ativo. Inicie 'ollama serve' no terminal para gerar respostas.")
                 elif not st.session_state.active_model:
-                    st.error("Nenhum modelo selecionado ou instalado. Acesse a aba 'Modelos' para configurar.")
+                    st.error("Nenhum modelo selecionado ou instalado. Acesse a barra lateral ou a aba 'Modelos' para configurar.")
+                elif not model_manager.is_model_installed(st.session_state.active_model):
+                    st.warning(
+                        f"O modelo '{st.session_state.active_model}' ainda não está baixado no Ollama. "
+                        f"Clique no botão 'Baixar e Ativar' na barra lateral para baixá-lo antes de iniciar a conversa."
+                    )
                 else:
                     message_placeholder = st.empty()
                     message_placeholder.markdown(
