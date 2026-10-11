@@ -87,7 +87,7 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     width: 100% !important;
     margin-inline: auto !important;
     padding-top: 1.5rem !important;
-    padding-bottom: 8.5rem !important;
+    padding-bottom: 14rem !important;
     padding-inline: 1.5rem !important;
     box-sizing: border-box !important;
     position: relative !important;
@@ -643,18 +643,26 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     gap: 0 !important;
 }
 
-/* Oculta o avatar do usuário (como no ChatGPT e Gemini para manter o visual limpo e minimalista) */
-[data-testid="stChatMessage"]:has(img[alt="user"]) [data-testid="stChatMessageAvatarContainer"],
-[data-testid="stChatMessage"]:has(img[alt="user avatar"]) [data-testid="stChatMessageAvatarContainer"],
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]),
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarCustom"]) [data-testid="stChatMessageAvatarContainer"],
-[data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]) [data-testid="stChatMessageAvatarContainer"],
-[data-testid="stChatMessage"]:has(.nx-u) [data-testid="stChatMessageAvatarContainer"] {
+/* Oculta completamente o avatar do usuário (como no ChatGPT e Gemini para manter o visual limpo e minimalista) */
+[data-testid="stChatMessage"]:has(img[alt="user"]) > :not([data-testid="stChatMessageContent"]),
+[data-testid="stChatMessage"]:has(img[alt="user avatar"]) > :not([data-testid="stChatMessageContent"]),
+[data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]) > :not([data-testid="stChatMessageContent"]),
+[data-testid="stChatMessage"]:has([aria-label*="user" i]) > :not([data-testid="stChatMessageContent"]),
+[data-testid="stChatMessage"]:has(.nx-u) > :not([data-testid="stChatMessageContent"]),
+[data-testid="stChatMessage"]:has(.nx-u) > :first-child:not([data-testid="stChatMessageContent"]),
+[data-testid="stChatMessage"]:has([aria-label*="user" i]) > :first-child:not([data-testid="stChatMessageContent"]) {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
 }
 
 /* Balão de fala do usuário */
@@ -838,15 +846,27 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
 .nx-typing span:nth-child(2){animation-delay:.2s} .nx-typing span:nth-child(3){animation-delay:.4s}
 @keyframes nxblink { 0%,80%,100%{opacity:.25; transform:scale(.8);} 40%{opacity:1; transform:scale(1);} }
 
-/* ============================ Campo de mensagem (Moderno, Minimalista, Sem Ícones Falsos) ============================ */
-[data-testid="stBottom"], [data-testid="stBottom"] > div {
+/* ============================ Campo de mensagem / Shield inferior (Estilo ChatGPT / Gemini) ============================ */
+/* Fundo protetor em degradê suave: dissolve o texto antes de chegar à barra e impede sobreposição */
+[data-testid="stBottom"] {
+    background: linear-gradient(180deg, rgba(8, 11, 20, 0) 0%, rgba(8, 11, 20, 0.75) 25%, #080B14 55%, #080B14 100%) !important;
+    padding-top: 36px !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 40 !important;
+    pointer-events: none !important;
+}
+[data-testid="stBottom"] > div {
     background: transparent !important;
+    pointer-events: auto !important;
 }
 [data-testid="stBottomBlockContainer"] {
     width: 100% !important;
     max-width: var(--nx-chat-w) !important;
     margin-inline: auto !important;
-    padding: 0 1.5rem 1.25rem 1.5rem !important;
+    padding: 0 1.5rem 1.35rem 1.5rem !important;
     box-sizing: border-box !important;
 }
 [data-testid="stChatInput"] {
@@ -855,17 +875,18 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     align-items: center !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 6px 8px 6px 16px !important;
-    border-radius: 16px !important;
-    background: var(--nx-surface) !important;
+    padding: 8px 10px 8px 18px !important;
+    border-radius: 18px !important;
+    background: #0E1424 !important;
     border: 1px solid var(--nx-border-2) !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,.60) !important;
     transition: var(--nx-t) !important;
     box-sizing: border-box !important;
+    z-index: 50 !important;
 }
 [data-testid="stChatInput"]:focus-within {
     border-color: var(--nx-purple) !important;
-    box-shadow: 0 0 0 3px rgba(117,72,255,.18), 0 4px 20px rgba(0,0,0,.35) !important;
+    box-shadow: 0 0 0 3px rgba(117,72,255,.22), 0 8px 32px rgba(0,0,0,.60) !important;
 }
 /* Remove completamente ícones falsos decorativos (paperclip e sliders) */
 [data-testid="stChatInput"]::before,
