@@ -1,0 +1,17 @@
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "dark"
+primaryColor = "#7548FF"
+backgroundColor = "#080B14"
+secondaryBackgroundColor = "#0A0E19"
+textColor = "#F4F6FF"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+runOnSave = true
+fileWatcherType = "auto"
