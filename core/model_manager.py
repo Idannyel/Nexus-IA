@@ -22,8 +22,86 @@ from core.config import settings
 # Caminho para persistência de parâmetros customizados por modelo
 MODEL_CONFIGS_PATH = os.path.join("data", "model_configs.json")
 
-# Catálogo estruturado de modelos recomendados e especializados
+# Catálogo estruturado multimodelo para o Nexus IA
 MODEL_CATALOG = {
+    "llama": {
+        "id": "llama",
+        "name": "Llama (Meta)",
+        "badge": "Padrão da Indústria",
+        "tagline": "Raciocínio robusto, seguimento de instruções e tarefas gerais.",
+        "description": "Modelos da família Llama da Meta AI, amplamente testados e com excelente capacidade geral.",
+        "default_params": {
+            "temperature": 0.7,
+            "num_predict": 2048,
+            "top_p": 0.9,
+        },
+        "system_instruction": "Você é o assistente Nexus IA baseado em Llama. Seja claro, conciso e profissional.",
+        "variants": [
+            {
+                "tag": "llama3.2:latest",
+                "name": "Llama 3.2 (3B)",
+                "size_gb": 2.0,
+                "min_ram_gb": 4.0,
+                "badge": "Recomendado / Balanceado",
+                "description": "Excelente equilíbrio entre velocidade e inteligência para tarefas do dia a dia.",
+            },
+            {
+                "tag": "llama3.2:1b",
+                "name": "Llama 3.2 (1B)",
+                "size_gb": 1.3,
+                "min_ram_gb": 2.0,
+                "badge": "Ultraleve",
+                "description": "Variante supercompacta para respostas instantâneas.",
+            },
+            {
+                "tag": "llama3.1:8b",
+                "name": "Llama 3.1 (8B)",
+                "size_gb": 4.7,
+                "min_ram_gb": 8.0,
+                "badge": "Alta Capacidade",
+                "description": "Alta capacidade para raciocínio complexo, síntese documental e redação corporativa.",
+            },
+        ],
+    },
+    "gemma": {
+        "id": "gemma",
+        "name": "Gemma (Google)",
+        "badge": "Precisão & Síntese",
+        "tagline": "Modelos compactos de alta precisão baseados na pesquisa do Google Gemini.",
+        "description": "Projetados para tarefas corporativas, síntese estruturada e clareza conceitual.",
+        "default_params": {
+            "temperature": 0.7,
+            "num_predict": 2048,
+            "top_p": 0.9,
+        },
+        "system_instruction": "Você é o assistente Nexus IA baseado em Gemma. Forneça respostas objetivas e bem fundamentadas.",
+        "variants": [
+            {
+                "tag": "gemma3:latest",
+                "name": "Gemma 3 (4B)",
+                "size_gb": 3.4,
+                "min_ram_gb": 6.0,
+                "badge": "Mais Recente",
+                "description": "Nova geração de modelos compactos do Google com grande coerência em múltiplos idiomas.",
+            },
+            {
+                "tag": "gemma3:1b",
+                "name": "Gemma 3 (1B)",
+                "size_gb": 1.0,
+                "min_ram_gb": 2.0,
+                "badge": "Ultraleve",
+                "description": "Ideal para ambientes com baixa memória e alta velocidade.",
+            },
+            {
+                "tag": "gemma2:2b",
+                "name": "Gemma 2 (2B)",
+                "size_gb": 1.6,
+                "min_ram_gb": 3.5,
+                "badge": "Eficiente",
+                "description": "Arquitetura refinada do Google com alto desempenho em tarefas de texto.",
+            },
+        ],
+    },
     "deepseek": {
         "id": "deepseek",
         "name": "DeepSeek",
@@ -34,7 +112,7 @@ MODEL_CATALOG = {
             "algoritmos, refatoração de código e resolução de problemas lógicos complexos."
         ),
         "default_params": {
-            "temperature": 0.3,
+            "temperature": 0.6,
             "num_predict": 4096,
             "top_p": 0.95,
         },
@@ -122,12 +200,74 @@ MODEL_CATALOG = {
             },
         ],
     },
+    "qwen": {
+        "id": "qwen",
+        "name": "Qwen (Alibaba)",
+        "badge": "Multilíngue & Lógica",
+        "tagline": "Excelente suporte a código, matemática e contexto alargado.",
+        "description": "Família Qwen 2.5 com altíssimo desempenho em benchmarks abertos de raciocínio.",
+        "default_params": {
+            "temperature": 0.6,
+            "num_predict": 2048,
+            "top_p": 0.9,
+        },
+        "system_instruction": "Você é o assistente Nexus IA baseado em Qwen. Responda com rigor técnico e clareza.",
+        "variants": [
+            {
+                "tag": "qwen2.5:1.5b",
+                "name": "Qwen 2.5 (1.5B)",
+                "size_gb": 1.0,
+                "min_ram_gb": 2.0,
+                "badge": "Ultraleve",
+                "description": "Leve e muito competente em raciocínio básico e instruções simples.",
+            },
+            {
+                "tag": "qwen2.5:3b",
+                "name": "Qwen 2.5 (3B)",
+                "size_gb": 1.9,
+                "min_ram_gb": 4.0,
+                "badge": "Balanceado",
+                "description": "Capacidade impressionante para seu tamanho em lógica e raciocínio.",
+            },
+            {
+                "tag": "qwen2.5:7b",
+                "name": "Qwen 2.5 (7B)",
+                "size_gb": 4.7,
+                "min_ram_gb": 8.0,
+                "badge": "Alta Performance",
+                "description": "Excelente compreensão de instruções complexas e raciocínio analítico.",
+            },
+        ],
+    },
+    "mistral": {
+        "id": "mistral",
+        "name": "Mistral (Mistral AI)",
+        "badge": "Velocidade & Precisão",
+        "tagline": "Eficiência e raciocínio preciso em tarefas de análise textual.",
+        "description": "Modelos da Mistral AI com atenção refinada para resposta rápida e objetiva.",
+        "default_params": {
+            "temperature": 0.7,
+            "num_predict": 2048,
+            "top_p": 0.9,
+        },
+        "system_instruction": "Você é o assistente Nexus IA baseado em Mistral. Forneça respostas diretas e precisas.",
+        "variants": [
+            {
+                "tag": "mistral:7b",
+                "name": "Mistral (7B Instruct)",
+                "size_gb": 4.1,
+                "min_ram_gb": 6.5,
+                "badge": "Clássico",
+                "description": "Excelente para tarefas executivas, análise de texto e raciocínio.",
+            },
+        ],
+    },
     "general": {
         "id": "general",
         "name": "Geral / Padrão",
         "badge": "Uso Geral",
         "tagline": "Modelos gerais e polivalentes da comunidade.",
-        "description": "Modelos como Gemma, Llama ou Qwen para uso diário.",
+        "description": "Modelos comunitários para uso diário no Ollama.",
         "default_params": {
             "temperature": 0.7,
             "num_predict": 2048,
@@ -149,9 +289,70 @@ class ModelManager:
 
     # ========================== Inspeção de Hardware ==========================
 
+    _cached_gpu_info = None
+
+    @staticmethod
+    def get_ollama_storage_path() -> str:
+        """Retorna o diretório real onde o Ollama armazena os modelos."""
+        custom = os.environ.get("OLLAMA_MODELS")
+        if custom and os.path.exists(custom):
+            return custom
+        user_home = os.path.expanduser("~")
+        ollama_default = os.path.join(user_home, ".ollama")
+        if os.path.exists(ollama_default):
+            return ollama_default
+        return os.path.abspath(".")
+
+    @classmethod
+    def detect_gpu_device(cls) -> Dict[str, Any]:
+        """Detecta acelerador gráfico dedicado (NVIDIA, AMD Radeon, Intel) no Windows ou Linux."""
+        if cls._cached_gpu_info is not None:
+            return cls._cached_gpu_info
+
+        res = {"has_gpu": False, "gpu_name": "CPU (Processamento local)", "vram_gb": 0.0}
+
+        # 1. Tenta PyTorch CUDA
+        try:
+            import torch
+            if torch.cuda.is_available():
+                res["has_gpu"] = True
+                res["gpu_name"] = torch.cuda.get_device_name(0)
+                res["vram_gb"] = round(torch.cuda.get_device_properties(0).total_memory / (1024**3), 1)
+                cls._cached_gpu_info = res
+                return res
+        except Exception:
+            pass
+
+        # 2. No Windows, consulta WMI / CIM para placas AMD Radeon, NVIDIA ou Intel
+        if os.name == "nt":
+            try:
+                import subprocess
+                cmd = 'Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json'
+                out = subprocess.check_output(['powershell', '-NoProfile', '-Command', cmd], text=True, timeout=3).strip()
+                if out:
+                    data = json.loads(out)
+                    if isinstance(data, list):
+                        data = data[0]
+                    name = data.get("Name", "")
+                    raw_ram = data.get("AdapterRAM", 0) or 0
+                    vram_gb = round(raw_ram / (1024**3), 1)
+                    if "6600" in name and (vram_gb == 4.0 or vram_gb == 0.0):
+                        vram_gb = 8.0  # AMD RX 6600 possui 8GB VRAM dedicados
+                    if name and not any(ign in name.lower() for ign in ["virtual", "basic", "generic"]):
+                        res["has_gpu"] = True
+                        res["gpu_name"] = name
+                        res["vram_gb"] = vram_gb
+                        cls._cached_gpu_info = res
+                        return res
+            except Exception:
+                pass
+
+        cls._cached_gpu_info = res
+        return res
+
     @staticmethod
     def get_hardware_info() -> Dict[str, Any]:
-        """Detecta especificações de hardware locais (RAM, Disco, GPU)."""
+        """Detecta especificações de hardware locais (RAM, Disco de modelos, GPU)."""
         info = {
             "total_ram_gb": 0.0,
             "avail_ram_gb": 0.0,
@@ -160,6 +361,7 @@ class ModelManager:
             "has_gpu": False,
             "gpu_name": "CPU (Processamento local)",
             "vram_gb": 0.0,
+            "ollama_path": "",
         }
 
         # 1. Memória RAM no Windows via API nativa do Kernel
@@ -185,25 +387,26 @@ class ModelManager:
         except Exception:
             pass
 
-        # 2. Espaço em Disco
+        # 2. Espaço em Disco (Armazenamento real onde o Ollama salva os modelos)
         try:
-            disk = shutil.disk_usage(".")
+            ollama_dir = ModelManager.get_ollama_storage_path()
+            disk = shutil.disk_usage(ollama_dir)
             info["free_disk_gb"] = round(disk.free / (1024**3), 1)
             info["total_disk_gb"] = round(disk.total / (1024**3), 1)
+            info["ollama_path"] = ollama_dir
         except Exception:
-            pass
+            try:
+                disk = shutil.disk_usage(".")
+                info["free_disk_gb"] = round(disk.free / (1024**3), 1)
+                info["total_disk_gb"] = round(disk.total / (1024**3), 1)
+            except Exception:
+                pass
 
-        # 3. GPU / VRAM via PyTorch (se compilado com CUDA)
-        try:
-            import torch
-            if torch.cuda.is_available():
-                info["has_gpu"] = True
-                info["gpu_name"] = torch.cuda.get_device_name(0)
-                info["vram_gb"] = round(
-                    torch.cuda.get_device_properties(0).total_memory / (1024**3), 1
-                )
-        except Exception:
-            pass
+        # 3. GPU / Acelerador gráfico dedicado
+        gpu_data = ModelManager.detect_gpu_device()
+        info["has_gpu"] = gpu_data["has_gpu"]
+        info["gpu_name"] = gpu_data["gpu_name"]
+        info["vram_gb"] = gpu_data["vram_gb"]
 
         return info
 

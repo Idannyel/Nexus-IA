@@ -25,9 +25,8 @@ class AgentOrchestrator:
 
         if family == "deepseek":
             system_prompt += (
-                "\n\n[DIRETRIZ DE RACIOCINIO - DEEPSEEK]: Pense metodicamente. "
-                "Para problemas técnicos, matemática e programação, estruture a solução passo a passo, "
-                "use blocos de código com sintaxe destacada e seja analiticamente rigoroso."
+                "\n\n[DIRETRIZ DE RACIOCINIO - DEEPSEEK]: Forneça respostas diretas, claras e naturais em português do Brasil. "
+                "Para problemas técnicos, código ou matemática, estruture a solução passo a passo de forma analítica."
             )
         elif family == "dolphin":
             system_prompt += (

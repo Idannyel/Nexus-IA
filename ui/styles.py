@@ -87,37 +87,51 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     width: 100% !important;
     margin-inline: auto !important;
     padding-top: 1.5rem !important;
-    padding-bottom: 14rem !important;
+    padding-bottom: 7.5rem !important;
     padding-inline: 1.5rem !important;
     box-sizing: border-box !important;
     position: relative !important;
     z-index: 1 !important;
 }
 
-/* Neutraliza margens e paddings espúrios de wrappers internos do Streamlit */
+/* Neutraliza margens desnecessárias do container raiz mantendo respiro natural */
 .block-container > [data-testid="stVerticalBlockBorderWrapper"] {
     width: 100% !important;
     max-width: 100% !important;
+    background: transparent !important;
+    border: none !important;
     padding: 0 !important;
     margin: 0 !important;
 }
 .block-container [data-testid="stVerticalBlock"] {
     width: 100% !important;
     max-width: 100% !important;
-    gap: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
 }
 .block-container .element-container {
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
+}
+/* Contêineres de seção com borda (st.container(border=True)) com respiro generoso */
+.block-container [data-testid="stVerticalBlockBorderWrapper"]:not(:first-child) {
+    background: var(--nx-surface) !important;
+    border: 1px solid var(--nx-border) !important;
+    border-radius: var(--nx-r-lg) !important;
+    padding: 24px 28px !important;
+    margin-bottom: 36px !important;
+    box-sizing: border-box !important;
 }
 .block-container [data-testid="stMarkdownContainer"] {
     width: 100% !important;
     max-width: 100% !important;
 }
+/* Anula bordas espúrias de colunas na área principal */
+.block-container [data-testid="column"] [data-testid="stVerticalBlockBorderWrapper"],
+.block-container [data-testid="column"] [data-testid="stVerticalBlock"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--nx-surface-3); border-radius: 8px; }
@@ -330,15 +344,31 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
 }
 [data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked)::before { background-color: #fff; }
 
-/* Cartões da barra lateral */
-[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlockBorderWrapper"] {
+/* Cartões da barra lateral (containers diretos com borda) */
+[data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] {
     background: var(--nx-surface);
     border: 1px solid var(--nx-border);
     border-radius: var(--nx-r-lg);
     padding: 12px 14px;
     box-sizing: border-box;
 }
-[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: .5rem; }
+[data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {
+    gap: .5rem;
+}
+
+/* Reset total de bordas e paddings para colunas e blocos internos da barra lateral */
+[data-testid="stSidebar"] [data-testid="column"],
+[data-testid="stSidebar"] [data-testid="column"] [data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stSidebar"] [data-testid="column"] [data-testid="stVerticalBlock"],
+[data-testid="stSidebar"] [data-testid="column"] .element-container {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+}
+
 .nx-ptitle {
     display: flex;
     align-items: center;
@@ -401,23 +431,110 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
 .stButton > button:active { transform: translateY(1px); }
 .stButton > button:focus-visible { outline: 2px solid var(--nx-purple-hi); }
 .stButton > button:disabled { opacity: .5; cursor: not-allowed; }
-[data-testid="stSidebar"] .stButton > button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 14px;
-    background: var(--nx-purple-dk);
-    border-color: rgba(117,72,255,.35);
+/* Contêiner de Ações da Barra Lateral (Limpar Chat / Liberar RAM) - LADO A LADO E SEM BORDA DUPLA */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: 10px !important;
+    margin-bottom: 2px !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
 }
-.stButton > button p { font-size: var(--nx-fs-sm); margin: 0; }
-[data-testid="stSidebar"] .stButton > button::before {
-    content: "";
-    width: 15px;
-    height: 15px;
-    background-color: var(--nx-purple-hi);
-    -webkit-mask: @icon(trash) center/contain no-repeat;
-    mask: @icon(trash) center/contain no-repeat;
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    min-width: 0 !important;
+    flex: 1 1 0px !important;
+    width: calc(50% - 4px) !important;
+    max-width: calc(50% - 4px) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
 }
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div.stButton,
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div.stButton > button,
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    height: 34px !important;
+    line-height: 1 !important;
+    padding: 0 4px !important;
+    margin: 0 !important;
+    background: var(--nx-surface-2) !important;
+    border: 1px solid var(--nx-border) !important;
+    border-radius: var(--nx-r-sm) !important;
+    color: var(--nx-text-2) !important;
+    font-size: 0.76rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    outline: none !important;
+    position: static !important;
+    transform: none !important;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+    cursor: pointer !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div.stButton > button:hover,
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:hover {
+    background: var(--nx-surface-3) !important;
+    border-color: var(--nx-border-hi) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(117, 72, 255, 0.18) !important;
+    transform: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div.stButton > button:active,
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:active {
+    background: var(--nx-surface-2) !important;
+    transform: translateY(1px) !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div.stButton > button:focus,
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:focus {
+    border-color: var(--nx-border-hi) !important;
+    outline: none !important;
+    transform: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div.stButton > button p,
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button p {
+    font-size: 0.76rem !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+    line-height: 1 !important;
+    width: 100% !important;
+    color: inherit !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+}
+
 
 /* Upload */
 [data-testid="stFileUploader"] section { padding: 0; }
@@ -541,8 +658,8 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
 
 .nx-cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
     margin: 28px 0 0 0;
     width: 100%;
     max-width: 100%;
@@ -551,8 +668,8 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
 .nx-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
+    gap: 14px;
+    padding: 14px 18px;
     text-align: left;
     background: var(--nx-surface);
     border: 1px solid var(--nx-border);
@@ -561,36 +678,51 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     transition: var(--nx-t);
     box-sizing: border-box;
     min-width: 0;
+    min-height: 74px;
 }
-.nx-card:hover { transform: translateY(-2px); border-color: var(--nx-border-hi); }
+.nx-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--nx-border-hi);
+    background: var(--nx-surface-2);
+}
 .nx-card .ico {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
     flex: none;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1B1B45, #141A3A);
+    background: linear-gradient(135deg, rgba(117,72,255,.15), rgba(49,92,255,.15));
     color: var(--nx-purple-hi);
     border: 1px solid var(--nx-border-2);
 }
+.nx-card .cnt {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
 .nx-card .t {
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--nx-text);
+    margin-bottom: 3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.25;
 }
 .nx-card .d {
-    font-size: 0.72rem;
+    font-size: 0.77rem;
     color: var(--nx-text-2);
-    margin-top: 2px;
-    line-height: 1.35;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin: 0;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 .nx-greet-wrap {
@@ -1151,7 +1283,7 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     line-height: 1.5;
 }
 
-/* Botões da aplicação (Excluir, Limpar Chat, etc.) */
+/* Botões da aplicação (Geral, Ativar, Salvar, etc.) */
 div.stButton {
     margin: 0 !important;
     margin-bottom: 8px !important;
@@ -1161,11 +1293,11 @@ div.stButton > button {
     border-radius: var(--nx-r-md) !important;
     background: var(--nx-surface) !important;
     border: 1px solid var(--nx-border) !important;
-    color: var(--nx-text-2) !important;
+    color: var(--nx-text) !important;
     font-size: var(--nx-fs-sm) !important;
     font-weight: 500 !important;
-    min-height: 44px !important;
-    height: 44px !important;
+    min-height: 40px !important;
+    height: 40px !important;
     padding: 0 16px !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -1178,127 +1310,346 @@ div.stButton > button {
     width: 100% !important;
 }
 div.stButton > button:hover {
-    background: rgba(248, 113, 113, 0.12) !important;
-    border-color: rgba(248, 113, 113, 0.4) !important;
-    color: #f87171 !important;
+    background: var(--nx-surface-3) !important;
+    border-color: var(--nx-border-hi) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 10px rgba(117, 72, 255, 0.2) !important;
+}
+div.stButton > button:active {
+    transform: scale(0.99) !important;
 }
 
 /* ============================ Hub de Modelos & Hardware ============================ */
+.nx-page {
+    margin-bottom: 30px;
+}
+.nx-page h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--nx-text);
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+}
+.nx-page .sub {
+    font-size: 0.86rem;
+    color: var(--nx-text-2);
+    line-height: 1.5;
+}
+
+/* Cabeçalhos de Seção com Hierarquia Clara */
+.nx-section-header {
+    margin-top: 36px;
+    margin-bottom: 16px;
+}
+.nx-section-header.first {
+    margin-top: 8px;
+}
+.nx-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--nx-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+}
+.nx-section-sub {
+    font-size: 0.82rem;
+    color: var(--nx-text-3);
+    margin-top: 4px;
+    line-height: 1.45;
+}
+
 .nx-hw-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin: 14px 0 24px 0;
+    gap: 14px;
+    margin: 14px 0 40px 0;
     width: 100%;
     box-sizing: border-box;
 }
 .nx-hw-card {
-    background: var(--nx-surface);
+    background: var(--nx-surface-2);
     border: 1px solid var(--nx-border);
     border-radius: var(--nx-r-md);
-    padding: 12px 14px;
-    box-sizing: border-box;
-    transition: var(--nx-t);
-}
-.nx-hw-card:hover { border-color: var(--nx-border-hi); }
-.nx-hw-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--nx-text-2);
-    font-size: var(--nx-fs-xs);
-    margin-bottom: 6px;
-}
-.nx-hw-val {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--nx-text);
-}
-.nx-hw-sub {
-    font-size: var(--nx-fs-xs);
-    color: var(--nx-text-3);
-    margin-top: 2px;
-}
-.nx-model-showcase {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 24px;
-    width: 100%;
-    box-sizing: border-box;
-}
-.nx-showcase-card {
-    background: var(--nx-surface);
-    border: 1px solid var(--nx-border);
-    border-radius: var(--nx-r-lg);
-    padding: 18px 20px;
+    padding: 16px 18px;
     box-sizing: border-box;
     transition: var(--nx-t);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-}
-.nx-showcase-card:hover { border-color: var(--nx-border-hi); }
-.nx-showcase-card.active {
-    border-color: var(--nx-purple);
-    box-shadow: 0 0 20px rgba(117, 72, 255, 0.15);
-}
-.nx-showcase-top {
-    display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    min-height: 110px;
 }
-.nx-showcase-title-row {
+.nx-hw-card:hover {
+    border-color: var(--nx-border-hi);
+    background: var(--nx-surface-3);
+}
+.nx-hw-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--nx-text-3);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+.nx-hw-val {
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+.nx-hw-val .unit {
+    font-size: 0.74rem;
+    font-weight: 400;
+    color: var(--nx-text-3);
+    margin-left: 4px;
+}
+.nx-hw-sub {
+    font-size: 0.75rem;
+    color: var(--nx-text-2);
+    margin-top: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nx-count-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--nx-fs-xs);
+    font-weight: 500;
+    color: var(--nx-text-3);
+    background: var(--nx-surface-3);
+    border: 1px solid var(--nx-border-2);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 8px;
+}
+
+.nx-dot-ok {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--nx-ok);
+    box-shadow: 0 0 6px var(--nx-ok);
+    flex-shrink: 0;
+}
+.nx-dot-err {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--nx-err);
+    box-shadow: 0 0 6px var(--nx-err);
+    flex-shrink: 0;
+}
+
+/* Lista de modelos instalados com respiro e alinhamento */
+.nx-model-table-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0 18px;
+    min-height: 48px;
+    height: 48px;
+    background: var(--nx-surface-2);
+    border: 1px solid var(--nx-border);
+    border-radius: var(--nx-r-md);
+    box-sizing: border-box;
+    transition: var(--nx-t);
+    width: 100%;
+    margin-bottom: 10px;
+}
+.nx-model-table-card:hover {
+    border-color: var(--nx-border-hi);
+    background: var(--nx-surface-3);
+}
+.nx-model-table-card.active {
+    border-color: var(--nx-purple);
+    background: rgba(117, 72, 255, 0.08);
+    box-shadow: 0 0 12px rgba(117, 72, 255, 0.12);
+}
+.nx-model-table-left {
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
 }
-.nx-showcase-ico {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+.nx-model-table-ico {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
     background: var(--nx-surface-3);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--nx-purple-hi);
+    color: var(--nx-sky);
     flex-shrink: 0;
 }
-.nx-showcase-name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--nx-text);
+.nx-model-table-card.active .nx-model-table-ico {
+    color: var(--nx-purple-hi);
+    background: rgba(117, 72, 255, 0.2);
 }
-.nx-showcase-badge {
+.nx-model-table-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.nx-model-table-name {
+    font-size: var(--nx-fs-sm);
+    font-weight: 600;
+    color: var(--nx-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nx-model-table-tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.nx-tag-chip {
+    font-size: var(--nx-fs-xs);
+    color: var(--nx-text-2);
+    background: var(--nx-surface-3);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--nx-border-2);
+    white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    padding: 3px 9px;
-    border-radius: 6px;
-    font-size: var(--nx-fs-xs);
-    font-weight: 600;
-    background: rgba(117, 72, 255, 0.15);
+}
+.nx-tag-chip.accent {
     color: var(--nx-purple-hi);
-    border: 1px solid rgba(117, 72, 255, 0.3);
+    background: rgba(117, 72, 255, 0.14);
+    border-color: rgba(117, 72, 255, 0.35);
+    font-weight: 600;
 }
-.nx-showcase-desc {
-    font-size: var(--nx-fs-sm);
-    color: var(--nx-text-2);
-    line-height: 1.5;
+
+/* Painel de Instalação e Especificações */
+.nx-install-card-wrap {
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    border-radius: var(--nx-r-lg);
+    padding: 18px 20px 20px 20px;
+    box-sizing: border-box;
+    margin-bottom: 24px;
+    width: 100%;
 }
-.nx-tags-row {
+.nx-spec-badge-bar {
     display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--nx-surface-2);
+    border: 1px solid var(--nx-border-2);
+    border-radius: var(--nx-r-md);
+    margin: 12px 0 16px 0;
     flex-wrap: wrap;
-    gap: 6px;
+    box-sizing: border-box;
 }
-.nx-tag-pill {
+.nx-spec-badge-item {
+    font-size: var(--nx-fs-xs);
+    color: var(--nx-text-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.nx-spec-badge-item strong {
+    color: var(--nx-text);
+}
+.nx-spec-badge-item code {
+    background: rgba(117, 72, 255, 0.12);
+    color: var(--nx-purple-hi);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: var(--nx-fs-xs);
+    border: 1px solid rgba(117, 72, 255, 0.25);
+}
+.nx-spec-desc-text {
     font-size: var(--nx-fs-xs);
     color: var(--nx-text-3);
-    background: var(--nx-surface-2);
-    border: 1px solid var(--nx-border);
-    padding: 2px 8px;
-    border-radius: 999px;
+    line-height: 1.45;
+    width: 100%;
+    margin-top: 4px;
+    border-top: 1px solid var(--nx-border);
+    padding-top: 6px;
 }
+
+.nx-already-active-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 40px;
+    min-height: 40px;
+    border-radius: var(--nx-r-md);
+    background: rgba(52, 211, 153, 0.08);
+    border: 1px solid rgba(52, 211, 153, 0.25);
+    color: var(--nx-ok);
+    font-size: var(--nx-fs-xs);
+    font-weight: 600;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nx-model-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.nx-model-card {
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    border-radius: var(--nx-r-lg);
+    padding: 16px 18px;
+    box-sizing: border-box;
+    transition: var(--nx-t);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.nx-model-card:hover { border-color: var(--nx-border-hi); }
+.nx-model-card.active {
+    border-color: var(--nx-purple);
+    box-shadow: 0 0 18px rgba(117, 72, 255, 0.15);
+}
+.nx-model-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.nx-model-card-title {
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--nx-text);
+}
+.nx-model-card-desc {
+    font-size: var(--nx-fs-sm);
+    color: var(--nx-text-2);
+    line-height: 1.45;
+}
+
 .nx-sidebar-model-badge {
     display: flex;
     align-items: center;
@@ -1307,44 +1658,69 @@ div.stButton > button:hover {
     background: var(--nx-surface-2);
     border: 1px solid var(--nx-border-2);
     border-radius: var(--nx-r-md);
-    margin-bottom: 8px;
+    margin-top: 4px;
+    margin-bottom: 10px;
     width: 100%;
     box-sizing: border-box;
 }
-.nx-sidebar-model-name {
-    font-size: var(--nx-fs-sm);
-    font-weight: 600;
-    color: var(--nx-text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.nx-sidebar-model-family {
+.nx-badge-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 6px;
     font-size: var(--nx-fs-xs);
+    font-weight: 600;
+    background: rgba(117, 72, 255, 0.15);
     color: var(--nx-purple-hi);
-    font-weight: 500;
-    flex-shrink: 0;
+    border: 1px solid rgba(117, 72, 255, 0.3);
 }
-.nx-think-block {
-    border-left: 3px solid var(--nx-purple);
-    padding: 8px 14px;
-    background: rgba(117, 72, 255, 0.06);
-    border-radius: 0 var(--nx-r-sm) var(--nx-r-sm) 0;
-    font-size: 0.88rem;
+.nx-badge-name {
+    font-size: var(--nx-fs-xs);
     color: var(--nx-text-2);
-    margin: 10px 0;
-    line-height: 1.6;
+    font-weight: 500;
+}
+
+/* Blocos de Raciocínio Analítico (<think>) */
+.nx-think-details {
+    background: rgba(14, 20, 36, 0.65);
+    border: 1px solid var(--nx-border);
+    border-left: 3px solid var(--nx-purple);
+    border-radius: var(--nx-r-sm);
+    margin: 12px 0;
+    padding: 8px 12px;
+    font-size: var(--nx-fs-sm);
+    color: var(--nx-text-2);
+    transition: var(--nx-t);
+}
+.nx-think-details[open] {
+    background: rgba(16, 23, 42, 0.85);
+    border-color: var(--nx-border-2);
 }
 .nx-think-title {
+    cursor: pointer;
     font-size: var(--nx-fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--nx-purple-hi);
-    margin-bottom: 4px;
     display: flex;
     align-items: center;
     gap: 6px;
+    user-select: none;
+    outline: none;
+}
+.nx-think-title:hover {
+    color: var(--nx-text);
+}
+.nx-think-body {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--nx-border);
+    line-height: 1.6;
+    color: var(--nx-text-2);
+    font-size: 0.86rem;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* ============================ Responsivo ============================ */
@@ -1357,7 +1733,8 @@ div.stButton > button:hover {
     .nx-cards { grid-template-columns: 1fr; }
     .nx-hw-grid { grid-template-columns: 1fr; }
     .nx-model-showcase { grid-template-columns: 1fr; }
-    .nx-cards { grid-template-columns: 1fr; }
+    .nx-model-table-tags { display: none !important; }
+    .nx-spec-badge-bar { flex-direction: column; align-items: flex-start; gap: 6px; }
     .nx-top { top: 8px; right: 12px; gap: 6px; }
     .nx-hero h1 { font-size: 1.7rem; }
     .nx-greet { font-size: 1.3rem; }

@@ -120,27 +120,13 @@ ollama_online = model_manager.is_available()
 installed_models_data = model_manager.list_installed_models() if ollama_online else []
 installed_tags = [m["name"] for m in installed_models_data]
 
-# Monta lista completa de modelos disponíveis para seleção direta
-# Inclui os modelos recomendados da família DeepSeek e Dolphin + modelos já instalados
-selectable_models = []
-featured_models = [
-    "deepseek-r1:1.5b",
-    "dolphin-phi:2.7b",
-    "deepseek-coder:1.3b",
-]
-
-for fm in featured_models:
-    if fm not in selectable_models:
-        selectable_models.append(fm)
-
-for im in installed_tags:
-    if im not in selectable_models:
-        selectable_models.append(im)
+# Lista de modelos efetivamente instalados no Ollama para seleção direta
+selectable_models = list(installed_tags)
 
 # Sincronização do modelo ativo
-if "active_model" not in st.session_state or not st.session_state.active_model:
-    if installed_tags:
-        st.session_state.active_model = installed_tags[0]
+if "active_model" not in st.session_state or not st.session_state.active_model or st.session_state.active_model not in selectable_models:
+    if settings.DEFAULT_MODEL in selectable_models:
+        st.session_state.active_model = settings.DEFAULT_MODEL
     elif selectable_models:
         st.session_state.active_model = selectable_models[0]
     else:
@@ -161,21 +147,22 @@ with st.sidebar:
         if not ollama_online:
             st.warning("Serviço Ollama não detectado em localhost:11434. Inicie o Ollama no terminal com 'ollama serve'.")
             selected_model = None
+        elif not selectable_models:
+            st.warning("Nenhum modelo baixado localmente no Ollama. Acesse a página 'Modelos' para baixar uma IA.")
+            selected_model = None
         else:
             def format_sidebar_model(tag: str) -> str:
-                is_inst = model_manager.is_model_installed(tag)
                 fam = model_manager.detect_family(tag)
                 fam_info = model_manager.get_family_info(fam)
                 fam_name = fam_info.get("name", fam.capitalize())
 
                 size_str = ""
-                for v in fam_info.get("variants", []):
-                    if v["tag"] == tag:
-                        size_str = f" ({v['size_gb']} GB)"
+                for m in installed_models_data:
+                    if m["name"] == tag:
+                        size_str = f" ({m['size_gb']:.1f} GB)"
                         break
 
-                status_label = "Instalado" if is_inst else "Baixar"
-                return f"{tag} · {fam_name}{size_str} — {status_label}"
+                return f"{tag} · {fam_name}{size_str}"
 
             cur_idx = selectable_models.index(st.session_state.active_model) if st.session_state.active_model in selectable_models else 0
             selected_model = st.selectbox(
@@ -188,41 +175,17 @@ with st.sidebar:
             st.session_state.active_model = selected_model
             settings.DEFAULT_MODEL = selected_model
 
-            # Atalhos rápidos para alternar diretamente entre DeepSeek e Dolphin
-            col_qds, col_qdol = st.columns(2)
-            with col_qds:
-                if st.button("DeepSeek", key="sb_quick_ds", use_container_width=True, help="Selecionar DeepSeek (Raciocínio & Código)"):
-                    st.session_state.active_model = "deepseek-r1:1.5b"
-                    settings.DEFAULT_MODEL = "deepseek-r1:1.5b"
-                    st.rerun()
-            with col_qdol:
-                if st.button("Dolphin", key="sb_quick_dol", use_container_width=True, help="Selecionar Dolphin (Conversação & Escrita)"):
-                    st.session_state.active_model = "dolphin-phi:2.7b"
-                    settings.DEFAULT_MODEL = "dolphin-phi:2.7b"
-                    st.rerun()
-
-            # Badge informativa da família e estado
+            # Badge informativa da família e estado do modelo ativo
             fam = model_manager.detect_family(selected_model)
             fam_info = model_manager.get_family_info(fam)
-            is_installed = model_manager.is_model_installed(selected_model)
-
-            status_badge_text = fam_info.get("badge", "Modelo")
-            if not is_installed:
-                status_badge_text += " · Não instalado"
 
             st.markdown(
                 f'<div class="nx-sidebar-model-badge">'
-                f'<span class="nx-badge-tag">{status_badge_text}</span>'
-                f'<span class="nx-badge-name">{fam_info.get("name", selected_model)}</span>'
+                f'<span class="nx-badge-tag">{fam_info.get("badge", "Ativo")}</span>'
+                f'<span class="nx-badge-name">Família: {fam.capitalize()}</span>'
                 f'</div>',
                 unsafe_allow_html=True
             )
-
-            # Botão de download rápido se a variante selecionada ainda não estiver instalada
-            if not is_installed:
-                st.info(f"O modelo '{selected_model}' ainda não foi baixado no Ollama local.")
-                if st.button(f"Baixar e Ativar", key="sb_btn_download_model", use_container_width=True):
-                    _execute_download(selected_model)
 
         # Persona Selection
         selected_persona = st.selectbox("Personalidade", list(settings.PERSONAS.keys()))
@@ -232,13 +195,13 @@ with st.sidebar:
         use_rag = st.checkbox("Memória / Documentos (RAG)", value=True)
         use_tools = st.checkbox("Ferramentas (Shell)", value=True, help="Use /shell [cmd]")
 
-        col_clr, col_rel = st.columns(2)
+        col_clr, col_rel = st.columns(2, gap="small")
         with col_clr:
-            if st.button("Limpar Chat", use_container_width=True):
+            if st.button("Limpar Chat", key="sb_btn_clear_chat", use_container_width=True):
                 st.session_state.messages = []
                 st.rerun()
         with col_rel:
-            if st.button("Liberar RAM", use_container_width=True, help="Descarrega o modelo da memória RAM"):
+            if st.button("Liberar RAM", key="sb_btn_unload_ram", use_container_width=True):
                 if st.session_state.active_model and model_manager.is_model_installed(st.session_state.active_model):
                     model_manager.unload_model(st.session_state.active_model)
                     st.toast(f"Modelo '{st.session_state.active_model}' descarregado da RAM.")
@@ -282,44 +245,54 @@ def _kv(rows):
 
 
 def format_chat_text(content: str) -> str:
-    """Formata tags de raciocínio como <think> do DeepSeek-R1 em blocos visuais estilizados."""
+    """Formata tags de raciocínio como <think> (DeepSeek-R1 e modelos analíticos) em blocos visuais estilizados."""
     if not content:
         return ""
 
     def _replace_think(match):
         thought = match.group(1).strip()
-        return f'<div class="nx-think-block"><div class="nx-think-title">Raciocínio Analítico</div>{thought}</div>'
+        return (
+            f'<details class="nx-think-details" open>'
+            f'<summary class="nx-think-title">{svg("brain", 14)} Raciocínio Analítico</summary>'
+            f'<div class="nx-think-body">{thought}</div>'
+            f'</details>'
+        )
 
     formatted = re.sub(r"<think>(.*?)</think>", _replace_think, content, flags=re.DOTALL)
 
     if "<think>" in formatted and "</think>" not in formatted:
         parts = formatted.split("<think>", 1)
-        formatted = f'{parts[0]}<div class="nx-think-block"><div class="nx-think-title">Raciocínio em andamento...</div>{parts[1]}</div>'
+        formatted = (
+            f'{parts[0]}<details class="nx-think-details" open>'
+            f'<summary class="nx-think-title">{svg("brain", 14)} Raciocínio em andamento...</summary>'
+            f'<div class="nx-think-body">{parts[1]}</div>'
+            f'</details>'
+        )
 
     return formatted
 
 
 def render_hero():
     cards = [
-        ("shield", "Privacidade total", "Seus dados permanecem na sua máquina."),
-        ("code", "DeepSeek Integrado", "Raciocínio lógico, matemática e código."),
-        ("sparkles", "Dolphin Integrado", "Escrita criativa e conversação fluida."),
-        ("database", "Memória & RAG", "Indexação local de documentos e vetores."),
+        ("shield", "Privacidade total", "Seus dados permanecem na sua máquina local."),
+        ("cpu", "Plataforma Multimodelo", "Alterne livremente entre Llama, Gemma, DeepSeek, Dolphin e outros."),
+        ("database", "Memória & RAG", "Indexação local de documentos (PDF, TXT, MD, DOCX)."),
+        ("terminal", "Ferramentas Locais", "Execução segura de comandos no terminal via /shell."),
     ]
     cards_html = "".join(
         f'<div class="nx-card"><div class="ico">{svg(i, 22)}</div>'
-        f'<div><div class="t">{t}</div><div class="d">{d}</div></div></div>'
+        f'<div class="cnt"><div class="t">{t}</div><div class="d">{d}</div></div></div>'
         for i, t, d in cards
     )
     st.markdown(
         '<div class="nx-welcome-wrap">'
         f'<div class="nx-hero"><img src="{LOGO_SRC}" alt="Nexus IA"/>'
         '<h1>Nexus <b>IA</b></h1>'
-        '<p>Assistente corporativo autônomo com DeepSeek, Dolphin e execução 100% local.</p></div>'
+        '<p>Assistente corporativo autônomo com suporte multimodelo e execução 100% local privada.</p></div>'
         f'<div class="nx-cards">{cards_html}</div>'
         '<div class="nx-greet-wrap">'
         '<div class="nx-greet">Olá! Como posso te ajudar <b>hoje?</b></div>'
-        '<div class="nx-greet-sub">Faça uma pergunta, solicite uma análise de código, crie um texto ou utilize ferramentas no terminal.</div></div>'
+        '<div class="nx-greet-sub">Faça uma pergunta, solicite uma análise de código, explore documentos ou utilize comandos no terminal.</div></div>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -420,7 +393,7 @@ def render_models():
     st.markdown(
         '<div class="nx-page">'
         '<h2>Central de Modelos de IA</h2>'
-        '<div class="sub">Gerenciamento, compatibilidade de hardware e integração de Dolphin e DeepSeek via Ollama.</div>'
+        '<div class="sub">Gerenciamento unificado de modelos locais, compatibilidade de hardware e controle de inferência via Ollama.</div>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -429,6 +402,15 @@ def render_models():
     hw = model_manager.get_hardware_info()
     ollama_status_text = "Online (localhost:11434)" if ollama_online else "Indisponível (inicie 'ollama serve')"
     gpu_label = hw["gpu_name"] + (f" ({hw['vram_gb']} GB VRAM)" if hw["vram_gb"] > 0 else "")
+    ollama_dot = '<span class="nx-dot-ok"></span>' if ollama_online else '<span class="nx-dot-err"></span>'
+
+    st.markdown(
+        f'<div class="nx-section-header first">'
+        f'<div class="nx-section-title">{svg("cpu", 16)} Diagnóstico de Hardware & Status Local</div>'
+        f'<div class="nx-section-sub">Recursos computacionais disponíveis e estado do serviço Ollama na máquina.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         f'<div class="nx-hw-grid">'
@@ -438,20 +420,19 @@ def render_models():
         f'<div class="nx-hw-sub">Total físico: {hw["total_ram_gb"]:.1f} GB</div>'
         f'</div>'
         f'<div class="nx-hw-card">'
-        f'<div class="nx-hw-title">{svg("hard-drive", 14)} Armazenamento</div>'
+        f'<div class="nx-hw-title">{svg("hard-drive", 14)} Armazenamento Ollama</div>'
         f'<div class="nx-hw-val">{hw["free_disk_gb"]:.1f} GB <span class="unit">livres</span></div>'
-        f'<div class="nx-hw-sub">Total em disco: {hw["total_disk_gb"]:.1f} GB</div>'
+        f'<div class="nx-hw-sub" title="{hw.get("ollama_path", "Local")}">Disco ({hw.get("ollama_path", "Local")})</div>'
         f'</div>'
         f'<div class="nx-hw-card">'
-        f'<div class="nx-hw-title">{svg("zap", 14)} Acelerador</div>'
-        f'<div class="nx-hw-val" style="font-size:14px; font-weight:600; padding-top:4px;">{gpu_label}</div>'
-        f'<div class="nx-hw-sub">Execução quantizada 100% local</div>'
+        f'<div class="nx-hw-title">{svg("zap", 14)} Acelerador Gráfico</div>'
+        f'<div class="nx-hw-val" title="{gpu_label}">{gpu_label}</div>'
+        f'<div class="nx-hw-sub">Inferência quantizada local (GPU)</div>'
         f'</div>'
         f'<div class="nx-hw-card">'
         f'<div class="nx-hw-title">{svg("shield", 14)} Motor Ollama</div>'
-        f'<div class="nx-hw-val" style="font-size:14px; font-weight:600; padding-top:4px;">'
-        f'{"Ativo" if ollama_online else "Desconectado"}</div>'
-        f'<div class="nx-hw-sub">{ollama_status_text}</div>'
+        f'<div class="nx-hw-val">{"Ativo" if ollama_online else "Desconectado"}</div>'
+        f'<div class="nx-hw-sub">{ollama_dot} {ollama_status_text}</div>'
         f'</div>'
         f'</div>',
         unsafe_allow_html=True,
@@ -466,138 +447,25 @@ def render_models():
             st.rerun()
         return
 
-    # 2. Vitrine dos Modelos Especializados: DeepSeek e Dolphin
-    st.markdown('<div class="nx-subtitle-sec">Modelos Especializados Recomendados</div>', unsafe_allow_html=True)
-
-    col_ds, col_dol = st.columns(2)
-
-    # Cartão DeepSeek
-    with col_ds:
-        ds_cat = MODEL_CATALOG["deepseek"]
-        st.markdown(
-            f'<div class="nx-showcase-card">'
-            f'<div class="nx-showcase-header">'
-            f'<div><span class="nx-showcase-title">{ds_cat["name"]}</span>'
-            f'<div class="nx-showcase-tagline">{ds_cat["tagline"]}</div></div>'
-            f'<span class="nx-badge-tag">{ds_cat["badge"]}</span>'
-            f'</div>'
-            f'<div class="nx-showcase-desc">{ds_cat["description"]}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-
-        ds_variants = ds_cat["variants"]
-        ds_labels = [f"{v['tag']} — {v['size_gb']} GB ({v['badge']})" for v in ds_variants]
-        ds_choice_idx = st.selectbox(
-            "Selecione a variante DeepSeek:",
-            range(len(ds_variants)),
-            format_func=lambda i: ds_labels[i],
-            key="sb_ds_variant",
-        )
-        chosen_ds = ds_variants[ds_choice_idx]
-
-        # Avaliação de compatibilidade
-        ds_compat = model_manager.evaluate_compatibility(chosen_ds["size_gb"], chosen_ds["min_ram_gb"])
-        if ds_compat["status"] == "error":
-            st.error(ds_compat["message"])
-        elif ds_compat["status"] == "warning":
-            st.warning(ds_compat["message"])
-        else:
-            st.info(ds_compat["message"])
-
-        ds_is_installed = model_manager.is_model_installed(chosen_ds["tag"])
-        ds_is_active = (st.session_state.active_model == chosen_ds["tag"]) or (
-            st.session_state.active_model and st.session_state.active_model.startswith(chosen_ds["tag"])
-        )
-
-        col_act1, col_act2 = st.columns(2)
-        with col_act1:
-            if ds_is_installed:
-                if ds_is_active:
-                    st.success("Modelo Ativo no Chat")
-                else:
-                    if st.button("Ativar DeepSeek", key="btn_act_ds", use_container_width=True):
-                        st.session_state.active_model = chosen_ds["tag"]
-                        settings.DEFAULT_MODEL = chosen_ds["tag"]
-                        st.rerun()
-            else:
-                if st.button(f"Baixar ({chosen_ds['size_gb']} GB)", key="btn_dl_ds", use_container_width=True):
-                    _execute_download(chosen_ds["tag"])
-        with col_act2:
-            if ds_is_installed and not ds_is_active:
-                if st.button("Excluir Modelo", key="btn_del_ds", use_container_width=True):
-                    model_manager.delete_model(chosen_ds["tag"])
-                    st.toast(f"Modelo {chosen_ds['tag']} removido.")
-                    st.rerun()
-
-    # Cartão Dolphin
-    with col_dol:
-        dol_cat = MODEL_CATALOG["dolphin"]
-        st.markdown(
-            f'<div class="nx-showcase-card">'
-            f'<div class="nx-showcase-header">'
-            f'<div><span class="nx-showcase-title">{dol_cat["name"]}</span>'
-            f'<div class="nx-showcase-tagline">{dol_cat["tagline"]}</div></div>'
-            f'<span class="nx-badge-tag">{dol_cat["badge"]}</span>'
-            f'</div>'
-            f'<div class="nx-showcase-desc">{dol_cat["description"]}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-
-        dol_variants = dol_cat["variants"]
-        dol_labels = [f"{v['tag']} — {v['size_gb']} GB ({v['badge']})" for v in dol_variants]
-        dol_choice_idx = st.selectbox(
-            "Selecione a variante Dolphin:",
-            range(len(dol_variants)),
-            format_func=lambda i: dol_labels[i],
-            key="sb_dol_variant",
-        )
-        chosen_dol = dol_variants[dol_choice_idx]
-
-        dol_compat = model_manager.evaluate_compatibility(chosen_dol["size_gb"], chosen_dol["min_ram_gb"])
-        if dol_compat["status"] == "error":
-            st.error(dol_compat["message"])
-        elif dol_compat["status"] == "warning":
-            st.warning(dol_compat["message"])
-        else:
-            st.info(dol_compat["message"])
-
-        dol_is_installed = model_manager.is_model_installed(chosen_dol["tag"])
-        dol_is_active = (st.session_state.active_model == chosen_dol["tag"]) or (
-            st.session_state.active_model and st.session_state.active_model.startswith(chosen_dol["tag"])
-        )
-
-        col_dact1, col_dact2 = st.columns(2)
-        with col_dact1:
-            if dol_is_installed:
-                if dol_is_active:
-                    st.success("Modelo Ativo no Chat")
-                else:
-                    if st.button("Ativar Dolphin", key="btn_act_dol", use_container_width=True):
-                        st.session_state.active_model = chosen_dol["tag"]
-                        settings.DEFAULT_MODEL = chosen_dol["tag"]
-                        st.rerun()
-            else:
-                if st.button(f"Baixar ({chosen_dol['size_gb']} GB)", key="btn_dl_dol", use_container_width=True):
-                    _execute_download(chosen_dol["tag"])
-        with col_dact2:
-            if dol_is_installed and not dol_is_active:
-                if st.button("Excluir Modelo", key="btn_del_dol", use_container_width=True):
-                    model_manager.delete_model(chosen_dol["tag"])
-                    st.toast(f"Modelo {chosen_dol['tag']} removido.")
-                    st.rerun()
-
-    # 3. Modelos Instalados no Ollama
-    st.markdown('<div class="nx-subtitle-sec" style="margin-top:28px;">Modelos Instalados Localmente</div>', unsafe_allow_html=True)
-
+    # 2. Modelos Instalados no Computador
     installed = model_manager.list_installed_models()
+    inst_count = len(installed)
+    badge_count = f'<span class="nx-count-badge">{inst_count} modelo{"s" if inst_count != 1 else ""}</span>'
+
+    st.markdown(
+        f'<div class="nx-section-header">'
+        f'<div class="nx-section-title">{svg("box", 16)} Modelos Instalados no Computador {badge_count}</div>'
+        f'<div class="nx-section-sub">Modelos baixados localmente prontos para uso offline imediato sem latência de rede.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
     if not installed:
         st.markdown(
             '<div class="nx-empty">'
             f'<div class="nx-empty-ico">{svg("box", 32)}</div>'
             '<div class="nx-empty-title">Nenhum modelo baixado no Ollama</div>'
-            '<div class="nx-empty-desc">Selecione uma variante de DeepSeek ou Dolphin acima e inicie o download local.</div>'
+            '<div class="nx-empty-desc">Selecione uma IA no catálogo abaixo e instale-a diretamente no computador.</div>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -606,102 +474,230 @@ def render_models():
             is_active = (m["name"] == st.session_state.active_model)
             fam = model_manager.detect_family(m["name"])
             fam_badge = MODEL_CATALOG.get(fam, {}).get("badge", "Geral")
+            active_class = " active" if is_active else ""
+            active_chip = "<span class='nx-tag-chip accent'><span class='nx-dot-ok' style='margin-right:4px;'></span>Ativo</span>" if is_active else ""
 
-            col_info, col_b1, col_b2 = st.columns([5.0, 1.3, 1.1])
-            with col_info:
-                active_pill = "<span class='nx-pill' style='margin-left:10px;'><span class='dot'></span>ativo</span>" if is_active else ""
-                st.markdown(
-                    f'<div class="nx-file-card">'
-                    f'<span class="nx-file-card-ico">{svg("box", 18)}</span>'
-                    f'<div class="nx-file-card-text">'
-                    f'<span class="nx-file-card-name">{m["name"]} {active_pill}</span>'
-                    f'<span class="nx-file-card-size">{m["size_gb"]:.2f} GB &middot; Família: {fam.capitalize()} ({fam_badge})</span>'
-                    f'</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-            with col_b1:
-                if not is_active:
+            card_html = (
+                f'<div class="nx-model-table-card{active_class}">'
+                f'<div class="nx-model-table-left">'
+                f'<span class="nx-model-table-ico">{svg("box", 16)}</span>'
+                f'<div class="nx-model-table-meta">'
+                f'<span class="nx-model-table-name" title="{m["name"]}">{m["name"]}</span>'
+                f'{active_chip}'
+                f'</div>'
+                f'</div>'
+                f'<div class="nx-model-table-tags">'
+                f'<span class="nx-tag-chip">{m["size_gb"]:.2f} GB</span>'
+                f'<span class="nx-tag-chip">{fam.capitalize()}</span>'
+                f'<span class="nx-tag-chip">{fam_badge}</span>'
+                f'</div>'
+                f'</div>'
+            )
+
+            # Mantém a mesma proporção total (5.0 + 2.4 = 7.4) para alinhamento horizontal perfeitamente unificado
+            if is_active:
+                col_info, col_b1 = st.columns([5.0, 2.4], gap="medium")
+                with col_info:
+                    st.markdown(card_html, unsafe_allow_html=True)
+                with col_b1:
+                    if st.button("Liberar RAM", key=f"tbl_unl_{m['name']}", use_container_width=True):
+                        model_manager.unload_model(m["name"])
+                        st.toast(f"'{m['name']}' descarregado da memória RAM.")
+            else:
+                col_info, col_b1, col_b2 = st.columns([5.0, 1.3, 1.1], gap="medium")
+                with col_info:
+                    st.markdown(card_html, unsafe_allow_html=True)
+                with col_b1:
                     if st.button("Ativar", key=f"tbl_act_{m['name']}", use_container_width=True):
                         st.session_state.active_model = m["name"]
                         settings.DEFAULT_MODEL = m["name"]
                         st.rerun()
-                else:
-                    if st.button("Liberar RAM", key=f"tbl_unl_{m['name']}", use_container_width=True):
-                        model_manager.unload_model(m["name"])
-                        st.toast(f"'{m['name']}' descarregado da memória.")
-            with col_b2:
-                if not is_active:
+                with col_b2:
                     if st.button("Excluir", key=f"tbl_del_{m['name']}", use_container_width=True):
                         model_manager.delete_model(m["name"])
-                        st.toast(f"'{m['name']}' excluído.")
+                        st.toast(f"'{m['name']}' excluído do computador.")
                         st.rerun()
 
-    col_ref, _ = st.columns([2.0, 5.0])
-    with col_ref:
-        if st.button("Atualizar Lista de Modelos", use_container_width=True):
-            st.rerun()
+    # 3. Instalar Nova IA Diretamente no Computador
+    st.markdown(
+        f'<div class="nx-section-header">'
+        f'<div class="nx-section-title">{svg("download", 16)} Instalar Nova IA no Computador</div>'
+        f'<div class="nx-section-sub">Download e quantização executados diretamente no computador com verificação de hardware.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    with st.container(border=True):
+        col_cat_fam, col_cat_var = st.columns([1, 1], gap="large")
+        with col_cat_fam:
+            catalog_families = [k for k in MODEL_CATALOG.keys() if k != "general"]
+            family_labels = {k: f"{MODEL_CATALOG[k]['name']} ({MODEL_CATALOG[k]['badge']})" for k in catalog_families}
+            family_labels["custom"] = "Digitar tag manual do Ollama..."
+
+            family_options = catalog_families + ["custom"]
+            chosen_family = st.selectbox(
+                "Família de IA:",
+                family_options,
+                format_func=lambda k: family_labels.get(k, k),
+                key="install_fam_select",
+            )
+
+        model_tag_to_install = None
+        est_size_gb = 2.0
+        est_ram_gb = 4.0
+        var_desc = ""
+        var_badge = "Geral"
+
+        with col_cat_var:
+            if chosen_family == "custom":
+                custom_tag = st.text_input(
+                    "Tag do modelo no Ollama:",
+                    placeholder="ex: qwen2.5:3b, mistral:7b, phi3:mini",
+                    key="install_custom_tag",
+                )
+                model_tag_to_install = custom_tag.strip()
+                est_size_gb = 2.5
+                est_ram_gb = 4.0
+                var_desc = "Modelo customizado informado pelo usuário diretamente do repositório Ollama."
+                var_badge = "Custom"
+            else:
+                cat_data = MODEL_CATALOG[chosen_family]
+                variants = cat_data.get("variants", [])
+                if variants:
+                    var_labels = [f"{v['tag']} — {v['size_gb']} GB ({v['badge']})" for v in variants]
+                    var_idx = st.selectbox(
+                        "Variante do Modelo:",
+                        range(len(variants)),
+                        format_func=lambda i: var_labels[i],
+                        key="install_var_select",
+                    )
+                    selected_var = variants[var_idx]
+                    model_tag_to_install = selected_var["tag"]
+                    est_size_gb = selected_var["size_gb"]
+                    est_ram_gb = selected_var["min_ram_gb"]
+                    var_desc = selected_var.get("description", "")
+                    var_badge = selected_var.get("badge", "Padrão")
+                else:
+                    st.info("Nenhuma variante pré-configurada nesta categoria.")
+
+        # Card de Especificação e Diagnóstico Pré-Instalação
+        if model_tag_to_install:
+            is_already_installed = model_manager.is_model_installed(model_tag_to_install)
+            compat = model_manager.evaluate_compatibility(est_size_gb, est_ram_gb)
+
+            st.markdown(
+                f'<div class="nx-spec-badge-bar">'
+                f'<span class="nx-spec-badge-item"><strong>Tag:</strong> <code>{model_tag_to_install}</code></span>'
+                f'<span class="nx-spec-badge-item">&bull; <strong>Download:</strong> ~{est_size_gb:.1f} GB</span>'
+                f'<span class="nx-spec-badge-item">&bull; <strong>RAM Mínima:</strong> {est_ram_gb:.1f} GB</span>'
+                f'<span class="nx-spec-badge-item">&bull; <strong>Perfil:</strong> {var_badge}</span>'
+                + (f'<div class="nx-spec-desc-text">{var_desc}</div>' if var_desc else "")
+                + f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            col_c_msg, col_c_btn = st.columns([3.8, 1.8], gap="medium")
+            with col_c_msg:
+                if is_already_installed:
+                    st.success(f"O modelo '{model_tag_to_install}' já está instalado no computador e pronto para uso.")
+                elif compat["status"] == "error":
+                    st.error(compat["message"])
+                elif compat["status"] == "warning":
+                    st.warning(compat["message"])
+                else:
+                    st.info(compat["message"])
+
+            with col_c_btn:
+                if is_already_installed:
+                    if st.session_state.active_model == model_tag_to_install:
+                        st.markdown(
+                            '<div class="nx-already-active-btn">'
+                            '<span class="nx-dot-ok"></span> Ativo no Chat'
+                            '</div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        if st.button("Ativar no Chat", key="btn_act_catalog", use_container_width=True):
+                            st.session_state.active_model = model_tag_to_install
+                            settings.DEFAULT_MODEL = model_tag_to_install
+                            st.rerun()
+                else:
+                    btn_label = f"Baixar e Instalar ({est_size_gb:.1f} GB)"
+                    can_dl = compat.get("can_install", True)
+                    if st.button(btn_label, key="btn_install_catalog", use_container_width=True, disabled=not can_dl):
+                        _execute_download(model_tag_to_install)
 
     # 4. Parâmetros Específicos por Modelo
     if st.session_state.active_model:
-        st.markdown('<div class="nx-subtitle-sec" style="margin-top:28px;">Ajuste de Parâmetros do Modelo Ativo</div>', unsafe_allow_html=True)
         active_m = st.session_state.active_model
         params = model_manager.get_model_params(active_m)
 
-        st.caption(f"Configurações de inferência para: {active_m}")
-        p_col1, p_col2, p_col3 = st.columns(3)
+        st.markdown(
+            f'<div class="nx-section-header">'
+            f'<div class="nx-section-title">'
+            f'{svg("sliders", 16)} Parâmetros de Inferência '
+            f'<span class="nx-count-badge" style="color:var(--nx-purple-hi);">{active_m}</span>'
+            f'</div>'
+            f'<div class="nx-section-sub">Calibração fina da amostragem e limite de contexto do modelo ativo.</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-        with p_col1:
-            new_temp = st.slider(
-                "Temperatura",
-                min_value=0.0,
-                max_value=1.5,
-                value=float(params.get("temperature", 0.7)),
-                step=0.05,
-                help="Valores menores favorecem respostas determinísticas e precisas (ideal para DeepSeek). Valores maiores estimulam criatividade (ideal para Dolphin).",
-            )
-        with p_col2:
-            new_tokens = st.slider(
-                "Limite de Tokens (num_predict)",
-                min_value=256,
-                max_value=8192,
-                value=int(params.get("num_predict", 2048)),
-                step=128,
-                help="Quantidade máxima de tokens gerados por resposta.",
-            )
-        with p_col3:
-            new_top_p = st.slider(
-                "Top-P (Nucleus Sampling)",
-                min_value=0.1,
-                max_value=1.0,
-                value=float(params.get("top_p", 0.9)),
-                step=0.05,
-                help="Controla a diversidade cumulativa de amostragem de vocabulário.",
-            )
-
-        btn_c1, btn_c2 = st.columns([1.5, 2.0])
-        with btn_c1:
-            if st.button("Salvar Parâmetros", use_container_width=True):
-                model_manager.save_model_params(
-                    active_m,
-                    {"temperature": new_temp, "num_predict": new_tokens, "top_p": new_top_p},
+        with st.container(border=True):
+            p_col1, p_col2, p_col3 = st.columns(3, gap="large")
+            with p_col1:
+                new_temp = st.slider(
+                    "Temperatura",
+                    min_value=0.0,
+                    max_value=1.5,
+                    value=float(params.get("temperature", 0.7)),
+                    step=0.05,
+                    help="Valores menores favorecem respostas determinísticas e precisas. Valores maiores estimulam maior diversidade.",
                 )
-                st.toast(f"Parâmetros de '{active_m}' salvos com sucesso.")
-        with btn_c2:
-            if st.button("Restaurar Padrões da Família", use_container_width=True):
-                model_manager.reset_model_params(active_m)
-                st.toast(f"Parâmetros de '{active_m}' restaurados.")
-                st.rerun()
+            with p_col2:
+                new_tokens = st.slider(
+                    "Limite de Tokens (num_predict)",
+                    min_value=256,
+                    max_value=8192,
+                    value=int(params.get("num_predict", 2048)),
+                    step=128,
+                    help="Quantidade máxima de tokens gerados por resposta.",
+                )
+            with p_col3:
+                new_top_p = st.slider(
+                    "Top-P (Nucleus Sampling)",
+                    min_value=0.1,
+                    max_value=1.0,
+                    value=float(params.get("top_p", 0.9)),
+                    step=0.05,
+                    help="Controla a diversidade cumulativa de amostragem de vocabulário.",
+                )
+
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+            col_save, col_reset, _ = st.columns([1.6, 2.0, 3.4], gap="medium")
+            with col_save:
+                if st.button("Salvar Parâmetros", use_container_width=True):
+                    model_manager.save_model_params(
+                        active_m,
+                        {"temperature": new_temp, "num_predict": new_tokens, "top_p": new_top_p},
+                    )
+                    st.toast(f"Parâmetros de '{active_m}' salvos com sucesso.")
+            with col_reset:
+                if st.button("Restaurar Padrões", use_container_width=True):
+                    model_manager.reset_model_params(active_m)
+                    st.toast(f"Parâmetros de '{active_m}' restaurados.")
+                    st.rerun()
+
 
 
 def render_about():
     st.markdown(
         '<div class="nx-page"><h2>Sobre</h2><div class="sub">Nexus IA é um assistente autônomo corporativo que opera localmente via Ollama, '
-        'com suporte nativo a DeepSeek e Dolphin, memória vetorial de documentos (RAG) e ferramentas seguras de terminal.</div></div>'
+        'com arquitetura multimodelo, memória vetorial de documentos (RAG) e ferramentas seguras de terminal.</div></div>'
         + _kv([
             ("Aplicação", "Nexus IA - Local Corporate Agent"),
             ("Motor de IA", "Ollama (100% Local)"),
-            ("Modelos Especializados", "DeepSeek (Raciocínio & Código) e Dolphin (Conversação & Escrita)"),
+            ("Arquitetura de Modelos", "Multimodelo (Llama, Gemma, DeepSeek, Dolphin, Mistral, Qwen, etc.)"),
             ("Formatos Suportados", "PDF, TXT, MD, DOCX"),
             ("Armazenamento Vetorial", "ChromaDB (local)"),
             ("Dados e Privacidade", "100% privados na sua máquina local" if IS_LOCAL else "Servidor remoto"),
@@ -723,20 +719,14 @@ if page == "Chat":
     # Remove mensagens em branco
     st.session_state.messages = [m for m in st.session_state.messages if m["content"].strip()]
 
-    # Se não há mensagens no histórico, a tela inicial fica totalmente fixa (sem rolagem) até iniciar a conversa
+    # Se não há mensagens no histórico, alinha o hero com flexbox centralizado sem cortar o conteúdo
     if not st.session_state.messages:
         st.markdown(
             """<style>
-            html, body, .stApp, [data-testid="stMain"], section.main {
-                overflow: hidden !important;
-                height: 100vh !important;
-                max-height: 100vh !important;
-            }
             .block-container {
-                padding-top: 1rem !important;
-                padding-bottom: 0 !important;
+                padding-top: 1.5rem !important;
+                padding-bottom: 2rem !important;
                 min-height: calc(100vh - 120px) !important;
-                height: calc(100vh - 120px) !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
