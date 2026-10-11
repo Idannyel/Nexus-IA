@@ -185,47 +185,71 @@ def render_settings():
 
 def render_files():
     docs_dir = os.path.join("data", "documents")
-    files = sorted(os.listdir(docs_dir)) if os.path.isdir(docs_dir) else []
-
-    if files:
-        items = "".join(
-            f'<div class="nx-file-row">'
-            f'<div class="nx-file-left"><span class="nx-file-ico">{svg("file", 18)}</span><span class="nx-file-name" title="{f}">{f}</span></div>'
-            f'<span class="nx-file-size">{os.path.getsize(os.path.join(docs_dir, f)) / 1024:.1f} KB</span>'
-            f'</div>'
-            for f in files
-        )
-        body = f'<div class="nx-files-list">{items}</div>'
-    else:
-        body = '<div class="nx-empty">Nenhum documento na base de conhecimento local. Envie arquivos através da barra lateral.</div>'
+    files = sorted([f for f in os.listdir(docs_dir) if not f.startswith(".") and f != ".keep"]) if os.path.isdir(docs_dir) else []
 
     st.markdown(
-        '<div class="nx-page"><h2>Arquivos</h2><div class="sub">Documentos disponíveis na base de conhecimento local.</div></div>' + body,
+        '<div class="nx-page">'
+        '<h2>Arquivos</h2>'
+        '<div class="sub">Documentos sincronizados na base de conhecimento local para RAG.</div>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
-    if files:
-        st.markdown('<div style="height: 14px;"></div>', unsafe_allow_html=True)
-        col_sel, col_del, col_clear = st.columns([3, 1.2, 1.2])
-        with col_sel:
-            chosen = st.selectbox(
-                "Selecionar arquivo para apagar",
-                options=files,
-                key="sel_del_file",
-                label_visibility="collapsed",
-            )
-        with col_del:
-            if st.button("🗑️ Apagar arquivo", key="btn_del_file", use_container_width=True):
-                if chosen:
-                    rag.delete_document(os.path.join(docs_dir, chosen))
-                    st.session_state.pop("indexed_file", None)
-                    st.toast(f"'{chosen}' apagado com sucesso!", icon="🗑️")
-                    st.rerun()
-        with col_clear:
-            if st.button("🗑️ Limpar todos", key="btn_clear_all", use_container_width=True):
+    if not files:
+        st.markdown(
+            '<div class="nx-empty">'
+            f'<div class="nx-empty-ico">{svg("file", 32)}</div>'
+            '<div class="nx-empty-title">Nenhum documento na base de conhecimento</div>'
+            '<div class="nx-empty-desc">Envie arquivos PDF, TXT, DOCX ou MD através da barra lateral para indexar e consultar via RAG.</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    total_bytes = sum(os.path.getsize(os.path.join(docs_dir, f)) for f in files)
+    total_str = f"{total_bytes / 1024:.1f} KB" if total_bytes < 1024 * 1024 else f"{total_bytes / (1024 * 1024):.2f} MB"
+    plural = "s" if len(files) > 1 else ""
+
+    col_meta, col_bulk = st.columns([4.8, 1.2])
+    with col_meta:
+        st.markdown(
+            f'<div class="nx-files-header-meta">'
+            f'<span class="nx-dot-ok"></span>'
+            f'<span><b>{len(files)}</b> documento{plural} indexado{plural} &middot; {total_str} no total</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    with col_bulk:
+        if len(files) > 1:
+            if st.button("Limpar todos", key="btn_clear_all_files", use_container_width=True):
                 rag.clear_all_documents(docs_dir=docs_dir)
                 st.session_state.pop("indexed_file", None)
-                st.toast("Base de conhecimento zerada!", icon="🗑️")
+                st.toast("Base de conhecimento zerada.")
+                st.rerun()
+
+    st.markdown('<div class="nx-files-divider"></div>', unsafe_allow_html=True)
+
+    for idx, f in enumerate(files):
+        size_b = os.path.getsize(os.path.join(docs_dir, f))
+        size_str = f"{size_b / 1024:.1f} KB" if size_b < 1024 * 1024 else f"{size_b / (1024 * 1024):.2f} MB"
+
+        col_item, col_act = st.columns([5.2, 1.1])
+        with col_item:
+            st.markdown(
+                f'<div class="nx-file-card">'
+                f'<span class="nx-file-card-ico">{svg("file", 18)}</span>'
+                f'<div class="nx-file-card-text">'
+                f'<span class="nx-file-card-name" title="{f}">{f}</span>'
+                f'<span class="nx-file-card-size">{size_str}</span>'
+                f'</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        with col_act:
+            if st.button("Excluir", key=f"del_file_{idx}", use_container_width=True):
+                rag.delete_document(os.path.join(docs_dir, f))
+                st.session_state.pop("indexed_file", None)
+                st.toast(f"'{f}' excluído da base.")
                 st.rerun()
 
 
@@ -262,21 +286,7 @@ def render_about():
     )
 
 
-def _make_user_avatar():
-    """Avatar de usuário (silhueta simples nas cores da paleta). O avatar da IA é a logo original."""
-    size = 128
-    img = Image.new("RGBA", (size, size), (0x15, 0x1D, 0x34, 255))
-    d = ImageDraw.Draw(img)
-    accent = (0x9B, 0x7B, 0xFF, 255)
-    d.ellipse((44, 24, 84, 64), fill=accent)
-    d.ellipse((24, 76, 104, 156), fill=accent)
-    mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((0, 0, size - 1, size - 1), radius=28, fill=255)
-    img.putalpha(mask)
-    return img
-
-
-AVATARS = {"user": _make_user_avatar(), "assistant": LOGO_IMG}
+AVATARS = {"assistant": LOGO_IMG}
 
 if page == "Chat":
     if "messages" not in st.session_state:
@@ -300,17 +310,21 @@ if page == "Chat":
         # Renderiza todo o histórico prévio (exceto a mensagem recém-submetida que será renderizada abaixo)
         existing_messages = st.session_state.messages[:-1] if new_user_message else st.session_state.messages
         for message in existing_messages:
-            with st.chat_message(message["role"], avatar=AVATARS.get(message["role"])):
-                st.markdown(message["content"])
+            if message["role"] == "user":
+                with st.chat_message("user"):
+                    st.markdown(f'<span class="nx-u"></span>' + message["content"], unsafe_allow_html=True)
+            else:
+                with st.chat_message("assistant", avatar=AVATARS["assistant"]):
+                    st.markdown(f'<span class="nx-a"></span>' + message["content"], unsafe_allow_html=True)
 
         # Se há uma nova mensagem de usuário nesta rodada, exibe e gera a resposta via streaming
         if new_user_message:
-            with st.chat_message("user", avatar=AVATARS["user"]):
-                st.markdown(new_user_message)
+            with st.chat_message("user"):
+                st.markdown(f'<span class="nx-u"></span>' + new_user_message, unsafe_allow_html=True)
 
             with st.chat_message("assistant", avatar=AVATARS["assistant"]):
                 message_placeholder = st.empty()
-                message_placeholder.markdown('<div class="nx-typing"><span></span><span></span><span></span></div>', unsafe_allow_html=True)
+                message_placeholder.markdown('<span class="nx-a"></span><div class="nx-typing"><span></span><span></span><span></span></div>', unsafe_allow_html=True)
                 full_response = ""
 
                 history_for_llm = [
@@ -328,9 +342,9 @@ if page == "Chat":
                         use_tools=use_tools
                     ):
                         full_response += chunk
-                        message_placeholder.markdown(full_response + "▌")
+                        message_placeholder.markdown(f'<span class="nx-a"></span>' + full_response + "▌", unsafe_allow_html=True)
                     if full_response.strip():
-                        message_placeholder.markdown(full_response)
+                        message_placeholder.markdown(f'<span class="nx-a"></span>' + full_response, unsafe_allow_html=True)
                         st.session_state.messages.append({"role": "assistant", "content": full_response})
                     else:
                         message_placeholder.warning("O modelo não retornou resposta. Tente novamente ou escolha outro modelo.")

@@ -610,55 +610,78 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     text-wrap: balance;
 }
 
-/* ============================ Conversa / Mensagens (Moderna & Minimalista) ============================ */
+/* ============================ Conversa / Mensagens (ChatGPT & Gemini Style) ============================ */
 [data-testid="stChatMessage"] {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0.4rem 0 !important;
-    margin: 0.25rem 0 !important;
-    gap: 12px !important;
+    padding: 0 !important;
+    margin: 1.25rem 0 !important;
     display: flex !important;
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    animation: nxfade .35s ease both;
+    animation: nxfade .25s ease both;
 }
 
-/* Balão do usuário: ALINHADO À DIREITA, perfeitamente centralizado com o avatar */
+/* ================== Mensagem do Usuário (Estilo ChatGPT / Gemini) ================== */
+/* Alinhado à direita, balão único e elegante, sem moldura externa */
+[data-testid="stChatMessage"]:has(img[alt="user"]),
 [data-testid="stChatMessage"]:has(img[alt="user avatar"]),
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]),
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarCustom"]),
 [data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]),
 [data-testid="stChatMessage"]:has(.nx-u) {
-    flex-direction: row-reverse !important;
-    justify-content: flex-start !important;
-    align-items: center !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    align-items: flex-end !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    margin-left: auto !important;
+    gap: 0 !important;
 }
 
+/* Oculta o avatar do usuário (como no ChatGPT e Gemini para manter o visual limpo e minimalista) */
+[data-testid="stChatMessage"]:has(img[alt="user"]) [data-testid="stChatMessageAvatarContainer"],
+[data-testid="stChatMessage"]:has(img[alt="user avatar"]) [data-testid="stChatMessageAvatarContainer"],
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]),
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarCustom"]) [data-testid="stChatMessageAvatarContainer"],
+[data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]) [data-testid="stChatMessageAvatarContainer"],
+[data-testid="stChatMessage"]:has(.nx-u) [data-testid="stChatMessageAvatarContainer"] {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Balão de fala do usuário */
+[data-testid="stChatMessage"]:has(img[alt="user"]) [data-testid="stChatMessageContent"],
 [data-testid="stChatMessage"]:has(img[alt="user avatar"]) [data-testid="stChatMessageContent"],
-[data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]),
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"],
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarCustom"]) [data-testid="stChatMessageContent"],
+[data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]) [data-testid="stChatMessageContent"],
 [data-testid="stChatMessage"]:has(.nx-u) [data-testid="stChatMessageContent"] {
-    background: rgba(117, 72, 255, 0.16) !important;
-    border: 1px solid rgba(117, 72, 255, 0.28) !important;
-    border-radius: 16px !important;
+    background: #1e2232 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
     padding: 10px 18px !important;
     width: fit-content !important;
-    max-width: 78% !important;
+    max-width: 72% !important;
     flex-grow: 0 !important;
     flex-shrink: 1 !important;
     flex-basis: auto !important;
     margin: 0 !important;
-    margin-left: 0 !important;
+    margin-left: auto !important;
     margin-right: 0 !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,.18) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
 }
 
-/* Anula qualquer margem parasita de containers internos do Streamlit dentro do balão */
+[data-testid="stChatMessage"]:has(img[alt="user"]) [data-testid="stChatMessageContent"] div,
 [data-testid="stChatMessage"]:has(img[alt="user avatar"]) [data-testid="stChatMessageContent"] div,
 [data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]) [data-testid="stChatMessageContent"] div,
 [data-testid="stChatMessage"]:has(.nx-u) [data-testid="stChatMessageContent"] div {
@@ -668,19 +691,23 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     box-sizing: border-box !important;
 }
 
+[data-testid="stChatMessage"]:has(img[alt="user"]) [data-testid="stChatMessageContent"] p,
 [data-testid="stChatMessage"]:has(img[alt="user avatar"]) [data-testid="stChatMessageContent"] p,
 [data-testid="stChatMessage"]:has(div[aria-label="Chat message from user"]) [data-testid="stChatMessageContent"] p,
 [data-testid="stChatMessage"]:has(.nx-u) [data-testid="stChatMessageContent"] p {
     margin: 0 !important;
     margin-bottom: 0 !important;
     padding: 0 !important;
-    line-height: 1.45 !important;
+    line-height: 1.5 !important;
     font-size: 0.95rem !important;
-    color: #ffffff !important;
+    color: #f1f5f9 !important;
     display: block !important;
+    font-weight: 400 !important;
 }
 
-/* Mensagem do Assistente: ALINHADA À ESQUERDA, sem caixa, sem quadrado, foco puro na leitura fluida */
+/* ================== Mensagem da IA / Assistente (Estilo ChatGPT / Gemini) ================== */
+/* Alinhada à esquerda, leitura fluida, sem balão, sem moldura */
+[data-testid="stChatMessage"]:has(img[alt="assistant"]),
 [data-testid="stChatMessage"]:has(img[alt="assistant avatar"]),
 [data-testid="stChatMessage"]:has(div[aria-label="Chat message from assistant"]),
 [data-testid="stChatMessage"]:has(.nx-a) {
@@ -690,38 +717,51 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    gap: 14px !important;
+    margin: 1.5rem 0 !important;
 }
 
+/* Ícone da IA elegante */
+[data-testid="stChatMessage"]:has(img[alt="assistant"]) [data-testid="stChatMessageAvatarContainer"],
+[data-testid="stChatMessage"]:has(img[alt="assistant avatar"]) [data-testid="stChatMessageAvatarContainer"] {
+    margin-top: 2px !important;
+    flex-shrink: 0 !important;
+}
+[data-testid="stChatMessage"]:has(img[alt="assistant"]) img,
+[data-testid="stChatMessage"]:has(img[alt="assistant avatar"]) img {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 !important;
+    box-shadow: 0 2px 8px rgba(117, 72, 255, 0.3) !important;
+}
+
+/* Conteúdo da resposta da IA */
+[data-testid="stChatMessage"]:has(img[alt="assistant"]) [data-testid="stChatMessageContent"],
 [data-testid="stChatMessage"]:has(img[alt="assistant avatar"]) [data-testid="stChatMessageContent"],
 [data-testid="stChatMessage"]:has(div[aria-label="Chat message from assistant"]) [data-testid="stChatMessageContent"],
 [data-testid="stChatMessage"]:has(.nx-a) [data-testid="stChatMessageContent"] {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 3px 0 0 0 !important;
+    padding: 0 !important;
     width: auto !important;
     max-width: 100% !important;
-    flex-grow: 1 !important;
+    flex: 1 1 auto !important;
     margin: 0 !important;
     text-align: left !important;
+    color: #e2e8f0 !important;
 }
 
-/* Avatares minimalistas e bem dimensionados */
-[data-testid="stChatMessage"] img {
-    width: 32px !important;
-    height: 32px !important;
-    flex-shrink: 0 !important;
-    display: block !important;
-    margin: 0 !important;
-}
-[data-testid="stChatMessage"]:has(img[alt="user avatar"]) img {
-    border-radius: 50% !important;
-    object-fit: cover !important;
-}
-[data-testid="stChatMessage"]:has(img[alt="assistant avatar"]) img {
-    border-radius: 10px !important;
-    object-fit: contain !important;
-    margin-top: 2px !important;
+[data-testid="stChatMessage"]:has(img[alt="assistant"]) [data-testid="stChatMessageContent"] p,
+[data-testid="stChatMessage"]:has(img[alt="assistant avatar"]) [data-testid="stChatMessageContent"] p,
+[data-testid="stChatMessage"]:has(div[aria-label="Chat message from assistant"]) [data-testid="stChatMessageContent"] p {
+    font-size: 1rem !important;
+    line-height: 1.75 !important;
+    color: #e2e8f0 !important;
+    margin-bottom: 0.85rem !important;
 }
 
 /* Conteúdo de mensagem */
@@ -951,6 +991,27 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     font-weight: 500;
     background: var(--nx-surface-2);
 }
+.nx-files-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--nx-fs-sm);
+    color: var(--nx-text-2);
+    min-height: 44px;
+    height: 44px;
+    box-sizing: border-box;
+}
+.nx-dot-ok {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--nx-ok);
+    box-shadow: 0 0 8px var(--nx-ok);
+    flex-shrink: 0;
+}
+.nx-files-divider {
+    height: 6px;
+}
 .nx-files-list {
     display: flex;
     flex-direction: column;
@@ -958,12 +1019,13 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     width: 100%;
     box-sizing: border-box;
 }
-.nx-file-row {
+.nx-file-row,
+.nx-file-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding: 0 18px;
+    padding: 0 16px;
     min-height: 44px;
     height: 44px;
     background: var(--nx-surface);
@@ -974,18 +1036,29 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     width: 100%;
     margin-bottom: 8px;
 }
-.nx-file-row:hover {
+.nx-file-row:hover,
+.nx-file-card:hover {
     border-color: var(--nx-border-hi);
     background: var(--nx-surface-2);
 }
-.nx-file-left {
+.nx-file-left,
+.nx-file-card-left {
     display: flex;
     align-items: center;
     gap: 12px;
     min-width: 0;
     flex: 1 1 auto;
 }
-.nx-file-ico {
+.nx-file-card-text {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.nx-file-ico,
+.nx-file-card-ico {
     width: 28px;
     height: 28px;
     border-radius: 8px;
@@ -996,7 +1069,8 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     color: var(--nx-sky);
     flex-shrink: 0;
 }
-.nx-file-name {
+.nx-file-name,
+.nx-file-card-name {
     font-size: var(--nx-fs-sm);
     font-weight: 500;
     color: var(--nx-text);
@@ -1004,7 +1078,8 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.nx-file-size {
+.nx-file-size,
+.nx-file-card-size {
     font-size: var(--nx-fs-xs);
     color: var(--nx-text-2);
     background: var(--nx-surface-3);
@@ -1016,18 +1091,40 @@ header[data-testid="stHeader"] { background: transparent !important; height: 0 !
 .nx-empty {
     color: var(--nx-text-3);
     font-size: var(--nx-fs-sm);
-    padding: 28px 20px;
+    padding: 36px 24px;
     text-align: center;
     border: 1px dashed var(--nx-border-2);
     border-radius: var(--nx-r-lg);
     background: var(--nx-surface);
     box-sizing: border-box;
     width: 100%;
+    margin: 12px 0;
+}
+.nx-empty-ico {
+    color: var(--nx-purple-hi);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+}
+.nx-empty-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--nx-text);
+    margin-bottom: 6px;
+}
+.nx-empty-desc {
+    font-size: var(--nx-fs-sm);
+    color: var(--nx-text-2);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.5;
 }
 
 /* Botões da aplicação (Excluir, Limpar Chat, etc.) */
 div.stButton {
+    margin: 0 !important;
     margin-bottom: 8px !important;
+    width: 100% !important;
 }
 div.stButton > button {
     border-radius: var(--nx-r-md) !important;
@@ -1036,8 +1133,8 @@ div.stButton > button {
     color: var(--nx-text-2) !important;
     font-size: var(--nx-fs-sm) !important;
     font-weight: 500 !important;
-    min-height: 40px !important;
-    height: 40px !important;
+    min-height: 44px !important;
+    height: 44px !important;
     padding: 0 16px !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -1047,11 +1144,12 @@ div.stButton > button {
     transition: var(--nx-t) !important;
     box-sizing: border-box !important;
     margin: 0 !important;
+    width: 100% !important;
 }
 div.stButton > button:hover {
-    background: rgba(255, 75, 75, 0.12) !important;
-    border-color: rgba(255, 75, 75, 0.35) !important;
-    color: #ff6b6b !important;
+    background: rgba(248, 113, 113, 0.12) !important;
+    border-color: rgba(248, 113, 113, 0.4) !important;
+    color: #f87171 !important;
 }
 
 /* ============================ Responsivo ============================ */
